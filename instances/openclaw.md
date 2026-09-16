@@ -46,17 +46,89 @@ flowchart TD
   PL --> P1["插件：联网"]
   PL --> P2["插件：工具"]
   style CORE fill:#4f46e5,color:#fff
-  style GW fill:#0d7d6e,color:#fff
+  style PL fill:#0d7d6e,color:#fff
 ```
 
-## 部署并扩展
+## 源码级：配置 + 连接器 + 插件骨架
 
-1. 按 openclaw-docs 的部署步骤跑起核心。
-2. 先接一个通道（如 CLI / Web），确认 Gateway 统一会话。
-3. 扩展：新增一个通道连接器，或写一个插件挂进插件体系——体会"核心不动、能力外挂"的 harness 设计。
+以下三份是 OpenClaw harness 的核心资产（格式依据 openclaw-docs，【事实】；具体字段以官方文档为准）。
+
+### ① Gateway 配置（一个核心，多通道）
+
+```yaml
+# openclaw.config.yaml
+gateway:
+  host: 127.0.0.1
+  port: 8787
+  channels:
+    - type: cli        # 先接 CLI 验证会话统一
+      enabled: true
+    - type: telegram
+      enabled: true
+      token: ${TELEGRAM_TOKEN}   # 凭据走环境变量引用，不写死
+    - type: web
+      enabled: true
+model:
+  provider: deepseek
+  name: deepseek-chat
+plugins:
+  - network          # 插件：联网
+  - tools            # 插件：工具
+```
+
+### ② 通道连接器骨架（核心不动、通道外挂）
+
+```typescript
+// connectors/my-channel.ts —— 新通道只需实现统一接口，核心不改
+import type { ChannelConnector, IncomingMessage } from "openclaw/connector";
+
+export const myChannel: ChannelConnector = {
+  id: "my-channel",
+
+  // 出站：把 agent 的回复推送到该通道
+  async send(to: string, text: string) {
+    await mySdk.pushMessage(to, text);
+  },
+
+  // 入站：把通道消息转成统一消息，交给 Gateway
+  onMessage(handler: (msg: IncomingMessage) => void) {
+    mySdk.on("message", (raw) =>
+      handler({
+        channelId: "my-channel",
+        userId: raw.from,
+        text: raw.text,
+        sessionKey: `my-channel:${raw.chatId}`,   // 会话键 → 多通道会话隔离
+      }),
+    );
+  },
+};
+```
+> 要点：**核心只认 `ChannelConnector` 接口**，新增通道 = 加一个实现文件 + 在配置里 enable——这就是"harness 核心与通道解耦"。`sessionKey` 决定 02 context 里的多通道会话如何隔离。
+
+### ③ 插件骨架（能力外挂）
+
+```typescript
+// plugins/network.ts —— 插件向 agent 贡献能力，用完可卸载
+import type { Plugin } from "openclaw/plugin";
+
+export const networkPlugin: Plugin = {
+  name: "network",
+  setup(app) {
+    app.registerTool({
+      name: "http_get",
+      description: "发起 HTTP GET 请求（受 harness 权限约束）",
+      run: async ({ url }) => (await fetch(url)).text(),
+    });
+  },
+  teardown() { /* 卸载时撤销注册（注册即副作用、卸载即撤销） */ },
+};
+```
+
+## 上手顺序
+① 按文档部署核心 → ② 先接 CLI 通道，确认 Gateway 统一会话 → ③ 加一个连接器或插件，体会"核心不动、能力外挂"。
 
 ::: info 【事实】
-来源：openclaw-docs.dx3n.cn（本站对标对象）。具体部署步骤、连接器/插件接口以官方文档为准；"凸显 harness/Gateway"是本体系的结构化定位（【推断】）。
+来源：openclaw-docs.dx3n.cn（本站对标对象）。上述配置/接口为依据官方文档的示意实现；"凸显 harness/Gateway"是本体系的结构化定位（【推断】）。
 :::
 
 ## 小测验

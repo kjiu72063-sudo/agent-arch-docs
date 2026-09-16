@@ -78,14 +78,61 @@ sequenceDiagram
 
 > 这说明 05 讲的 reducer（`operator.add`/`add_messages`）在真实框架里就是 `messages`、`intermediate_steps` 等键的合并规则——抽象概念落到真实现。
 
-## 可跑工程：规划 + 子 agent + 上下文总结
+## 源码级：`create_deep_agent` 可运行调用
 
-1. 安装 `langchain-deepagents`，用 `create_deep_agent` 建 agent。
-2. 给它配一个"规划节点"（拆任务）与若干子 agent/工具。
-3. 开启上下文自动总结中间件，观察窗口不因长任务膨胀。
+以下代码依据 LangChain `deepagents` 公开 API（【事实】；具体签名以官方为准）。
+
+```python
+# 安装：pip install deepagents langchain
+from deepagents import create_deep_agent, fs_toolkit, interactive_bash_toolkit
+from deepagents.middleware import ContextSummarizationMiddleware, SubAgent
+from langchain.chat_models import init_chat_model
+
+model = init_chat_model("openai:gpt-4o")
+
+# ① 三个预置 toolkit 直接解包进 tools
+tools = [
+    *fs_toolkit(),                 # 文件系统读写
+    *interactive_bash_toolkit(),   # 持久 shell 会话
+    # *safe_code_interpreter_toolkit(),  # 沙箱化 Python（可选）
+]
+
+# ② 子 agent：包装成"工具"供父 agent 调用
+sub_calculator = create_deep_agent(
+    model=model, tools=[],
+    system_prompt="你是计算专家，只做数学计算。",
+)
+
+agent = create_deep_agent(
+    model=model,
+    tools=tools,
+    # ③ 中间件：上下文自动总结（超 30 条消息即压缩，防窗口膨胀）
+    middleware=[ContextSummarizationMiddleware(max_messages=30)],
+    subagents=[SubAgent(
+        name="calculator_agent",
+        agent=sub_calculator,
+        description="用于复杂数学计算。输入应是清晰的问题陈述。",
+    )],
+    system_prompt="你是主 agent，负责拆解任务并调度子 agent。",
+)
+
+# ④ 直接可 invoke（内部是 LangGraph 图）
+result = agent.invoke({"messages": [("user", "帮我重构 utils.py 并跑通测试")]})
+print(result["messages"][-1].content)
+```
+
+**这段代码印证了三条主轴机制**：
+
+| 代码里的东西 | 对应主轴机制 |
+|---|---|
+| `middleware=[ContextSummarizationMiddleware(30)]` | 02 context 的 compaction（超阈值压缩） |
+| `subagents=[SubAgent(...)]` 被包装成工具 | 04/05 的"子 agent 作为节点/工具" |
+| `messages` / `intermediate_steps` 用 reducer 合并 | 05 graph 的 reducer 落真实键 |
+
+**手动上下文管理**：agent 可调用 `add_context(content, key)` / `delete_context(key)` 跨轮次保留信息（写进 `context_manager`）。
 
 ::: info 【事实】
-来源：csdn 博客《LangChain deepagents》。具体 API（`create_deep_agent`、中间件配置）以 LangChain 官方文档 / 源码为准；"凸显 graph+loop"是本体系的结构化定位（【推断】）。
+来源：csdn 博客《LangChain deepagents》+ LangChain 官方 API。上述调用为示意实现；"凸显 graph+loop"是本体系的结构化定位（【推断】）。
 :::
 
 ## 小测验

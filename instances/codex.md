@@ -47,14 +47,70 @@ flowchart TD
   style F fill:#b45309,color:#fff
 ```
 
-## 配置 AGENTS.md + skills + sandbox 跑通工程任务
+## 源码级：三份可直接抄用的真实配置
 
-1. 仓库根写 `AGENTS.md`，定义技术栈、命名规范、禁止事项。
-2. 装 skills 扩能力，接 MCP 拉外部服务（API/数据库）。
-3. 开 sandbox 隔离执行，让 Codex 在受控环境改代码、跑验证。
+下面三份配置是 Codex harness 的核心资产（格式依据 [smartloli《Codex 剖析》](https://www.cnblogs.com/smartloli/p/20684447) 与 OpenAI 官方文档，【事实】；具体键名以你安装的版本为准）。
+
+### ① `AGENTS.md`（项目宪法，由 harness 常驻注入 context）
+
+```markdown
+# AGENTS.md
+
+## 项目
+- 语言：Rust + Python 辅助脚本；构建：cargo / uv。
+- 测试：`cargo test`；lint：`cargo clippy -- -D warnings`。
+
+## 纪律（只写机器可验证的）
+- 任何改动必须通过 cargo test + clippy，否则不得提交。
+- 禁止改动 Cargo.lock 之外的依赖清单；禁止直接写 .env。
+
+## 目录指针（渐进披露）
+- 架构 → docs/architecture.md
+- 贡献流程 → CONTRIBUTING.md
+```
+
+### ② `~/.codex/config.toml`（沙箱与审批策略）
+
+```toml
+# 模型与沙箱：默认在沙箱内执行、改动需审批
+model = "gpt-5-codex"
+sandbox_mode = "workspace-write"      # read-only | workspace-write | danger-full-access
+approval_policy = "on-request"        # on-request | on-failure | never
+
+[sandbox_workspace_write]
+network_access = false                # 默认禁网，防越权外联
+writable_roots = ["."]                # 仅当前仓库可写
+
+[shell_environment_policy]
+inherit = "core"                      # 只继承最小环境变量，隔离凭据
+```
+> `sandbox_mode` 对应 03 harness 的权限取舍：`read-only`（只读）→ `workspace-write`（可改仓库）→ `danger-full-access`（全权）。越往上越能办事、风险越大。`network_access=false` + `inherit="core"` 是 **fail-closed** 思路的落地。
+
+### ③ 执行循环：不是"一次改完"，是"改—验—再改"
+
+```python
+# Codex 软件工程循环的骨架（依据其"读码→改→跑验证→再改"语义，【事实】）
+def codex_loop(task, repo, max_iter=15):
+    rules = repo.read("AGENTS.md")                      # ① 常驻规则注入 context
+    messages = [sys(rules), sys(f"任务：{task}")]
+    for i in range(max_iter):                           # harness 设迭代上限
+        plan = llm.plan(messages, tools=["read","edit","shell"])
+        for act in plan.actions:
+            if act.tool == "read":   messages.append(repo.read(act.path))
+            elif act.tool == "edit": sandbox.write(repo, act.path, act.content)  # ② 沙箱内改
+            elif act.tool == "shell":messages.append(sandbox.run(act.cmd))       # ③ 沙箱内跑
+        if verify(repo):                                # ④ 机械化验证（cargo test/clippy）
+            return "done"
+        # ⑤ 验证失败 → 把报错喂回，进入下一轮（prompter 反馈式）
+        messages.append(sys(f"验证失败：\n{last_error()}\n请修复后重试"))
+    return "达到迭代上限，停止"
+```
+
+## 上手顺序
+① 写 `AGENTS.md` → ② 配 `config.toml`（沙箱 + 审批 + 环境隔离）→ ③ 在仓库跑一个真实工程任务，观察"改—验—再改"循环。
 
 ::: info 【事实】
-来源：cnblogs.com/smartloli（Codex 剖析）。具体配置项、沙箱/命令语义以 OpenAI 官方文档与源码为准；"凸显 harness+loop"是本体系的结构化定位（【推断】）。
+来源：cnblogs.com/smartloli/p/20684447（Codex 剖析）+ OpenAI 官方文档。上述配置键名与沙箱语义以官方为准；"凸显 harness+loop"是本体系的结构化定位（【推断】）。
 :::
 
 ## 小测验
