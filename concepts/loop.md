@@ -36,6 +36,7 @@ flowchart TD
 |---|---|---|
 | [📐 4-1 机制详解](/concepts/loop/mechanism) | Goal 布尔判定、Trigger 四类、Prompter 反馈式、Generator/Verifier 分离、Open/Closed loop、**三刹车可运行脚本**、失败重试案例 | 设计 + 实现 |
 | [⚠️ 4-2 常见坑 + 自检](/concepts/loop/pitfalls) | 目标模糊、无刹车烧钱、自我评估、上下文膨胀等坑 + **产物化三档**（精通=交含三刹车的可运行脚本） | 验证 + 自检 |
+| [🧭 4-3 设计决策 + 验证](/concepts/loop/design) | Open/Closed **决策表**、Maker-Checker **双实战案例**、**Ralph 六信条映射**、可运行闭环 + gate | 设计 + 验证 |
 
 ::: info 承接关系
 01 的 `think-tools-test` 已埋"先推理后动手 → loop 雏形"。02 给预算、03 给外壳，04 把这个外壳里的**反复执行**机制做出来——loop 运行在 harness 内，每轮读写 context（02 的预算被多轮消耗 → 触发 compaction），由 Prompter 组装（01 的指令）。

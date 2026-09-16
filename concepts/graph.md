@@ -35,6 +35,7 @@ flowchart TD
 |---|---|---|
 | [📐 5-1 机制详解](/concepts/graph/mechanism) | **StateGraph 完整可运行代码**、State 类型 / `Annotated` / `operator.add` reducer 语义、条件边、compile、checkpoint | 实现 |
 | [⚠️ 5-2 常见坑 + 自检](/concepts/graph/pitfalls) | 滥用图、reducer 理解错、缺 checkpoint 等坑 + **产物化三档**（精通=提交含条件边的 StateGraph 并跑通） | 验证 + 自检 |
+| [🧭 5-3 设计决策 + 验证](/concepts/graph/design) | reducer 三类对照、checkpointer 生产选型、**HITL 决策表**、**Send 并行归并**、**gate 验收脚本** | 设计 + 验证 |
 
 ::: info 承接关系
 04 的 loop 反复解决一件事。05 把它升级为多节点编排：**graph 的每个节点可以是一个 loop**。当流程需要分支/并行/多角色时，用图把多个 loop 组织起来。

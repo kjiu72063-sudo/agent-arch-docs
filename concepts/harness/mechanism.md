@@ -12,7 +12,7 @@ title: 3-1 harness 机制详解
 
 ## 机制一：AGENTS.md —— 项目宪法
 
-`AGENTS.md`（或 Claude Code 的 `CLAUDE.md`）是放仓库根部的规则文件，**每次开工由 harness 注入 context**。一个最小真实样例：
+`AGENTS.md`（或 Claude Code 的 `CLAUDE.md`）是放仓库根部的规则文件，**每次开工由 harness 注入 context**。下面是一个"手册式"最小样例（便于理解内容）；**更推荐的"地图式"（~100 行目录 + 深层指针）写法见 [3-3 设计决策](/concepts/harness/design)**：
 
 ```markdown
 # AGENTS.md —— 项目宪法

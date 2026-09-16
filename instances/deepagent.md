@@ -50,6 +50,34 @@ sequenceDiagram
   D->>U: 汇总最终结果
 ```
 
+## 中间件机制（LangChain deepagents，【事实】）
+
+`create_deep_agent` 通过 **middleware** 在 agent 节点前后挂载横切能力，用 `MiddlewareReturn.state_update` 写回 LangGraph 状态：
+
+| 中间件 | 作用 |
+|---|---|
+| `ContextSummarizationMiddleware` | 消息超阈值（默认 30）时，对旧消息分组生成摘要并以 `SystemMessage` 替换，防窗口膨胀 |
+| `ContextExtractionMiddleware` | 从对话提取结构化实体/状态写入 context（确定性，呼应 [02 DSE](/concepts/context/design)） |
+| `SubAgentMiddleware` | 把子 agent 包装成 `StructuredTool`，父 agent 推理时看到"工具形式的子 agent" |
+| `AsyncToolsMiddleware` | 把同步工具包装为异步，避免阻塞 |
+
+**工具注册**：`create_deep_agent` 的 `tools` 参数接受三个预置 toolkit（`langchain_agentic_toolkits`）：
+
+| Toolkit | 包含工具 |
+|---|---|
+| `fs_toolkit()` | read_file / write_file / list_directory / file_search |
+| `interactive_bash_toolkit()` | 交互式 bash（持久 shell 会话） |
+| `safe_code_interpreter_toolkit()` | 沙箱化 Python 执行（stdout/stderr） |
+
+**手动上下文工具**：DeepAgent 暴露 `add_context(content, key)` / `delete_context(key)` 供 agent 跨轮次保留重要信息（写进 `context_manager`）。
+
+**状态 channel**（与 [05 graph 的 reducer](/concepts/graph/mechanism) 互链，【事实】）：
+- `messages: Annotated[list[BaseMessage], add_messages]` — 对话累积；
+- `intermediate_steps: Annotated[list, operator.add]` — 工具执行记录累积；
+- `context_manager` — 持久化工作记忆。
+
+> 这说明 05 讲的 reducer（`operator.add`/`add_messages`）在真实框架里就是 `messages`、`intermediate_steps` 等键的合并规则——抽象概念落到真实现。
+
 ## 可跑工程：规划 + 子 agent + 上下文总结
 
 1. 安装 `langchain-deepagents`，用 `create_deep_agent` 建 agent。

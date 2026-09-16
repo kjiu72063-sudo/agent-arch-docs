@@ -35,6 +35,7 @@ flowchart LR
 |---|---|---|
 | [📐 2-1 机制详解](/concepts/context/mechanism) | 预算分配算例、分层注入、渐进披露、压缩、spill、compaction 触发、记忆分层，**附可运行预算控制伪代码** | 设计 + 实现 |
 | [⚠️ 2-2 常见坑 + 自检](/concepts/context/pitfalls) | 上下文填满、相关度不足、压缩丢关键信息等坑 + **产物化三档**（精通=交一份上下文组装器） | 验证 + 自检 |
+| [🧭 2-3 设计决策 + 验证](/concepts/context/design) | compaction **五步流水线** + prune/summarize 分派、**DSE 确定性信号提取**、真实 tokenizer 计量、**压缩不丢可审计性**、gate 验收 | 设计 + 验证 |
 
 ::: info 承接关系
 02 承接 01：01 讲"指令（prompt）怎么写"，02 讲"在窗口预算内，怎么把额外信息喂给模型"。02 的输出（一套受预算约束的上下文注入/压缩策略）是 03 harness 的输入之一——**AGENTS.md 等规则文件由 harness 管理、由 context 注入**。

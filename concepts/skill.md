@@ -35,6 +35,7 @@ flowchart TD
 |---|---|---|
 | [📐 6-1 机制详解](/concepts/skill/mechanism) | **最小 `SKILL.md` 真实结构**、目录、discovery 流程、注入时机、tool/context/plugin/skill 边界、版本评审 + **装饰器示例** | 实现 |
 | [⚠️ 6-2 常见坑 + 自检](/concepts/skill/pitfalls) | 全量注入撑爆、skill 写太薄、无版本评审等坑 + **产物化三档**（精通=交付可发现可注入可版本化的 SKILL.md） | 验证 + 自检 |
+| [🧭 6-3 设计决策 + 验证](/concepts/skill/design) | **统一接口规范**（id/name/version/execute）、**六阶段生命周期**、业务化三模式代码、并发/缓存/资源 + gate 验收 | 设计 + 验证 |
 
 ::: info 承接关系
 01 的 `basics` 已讲过 `PromptSection` 分段、渐进披露。05 的 graph 节点可以是一个 loop。skill 作为横切支柱，**把可复用能力按需注入被 node/loop 消费**——它贯穿 context/harness/loop，是"能力复用"的横切层。
