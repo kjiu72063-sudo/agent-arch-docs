@@ -1,0 +1,105 @@
+/* ============================================================
+   Agent 架构知识体系 · 设计 token
+   目标：弃通用字体、背景造纵深、70-20-10 配色、暗亮双主题
+   ============================================================ */
+
+:root {
+  /* 主色 70% · 靛蓝 */
+  --vp-c-brand-1: #6366f1;
+  --vp-c-brand-2: #4f46e5;
+  --vp-c-brand-3: #4338ca;
+  --vp-c-brand-soft: rgba(79, 70, 229, .14);
+
+  /* 次色 20% · 青绿（Track B / 实战） */
+  --vp-c-accent: #0d7d6e;
+  --vp-c-accent-soft: rgba(13, 125, 110, .14);
+
+  /* 点缀 10% · 琥珀（CTA / 警示） */
+  --vp-c-warning-1: #b45309;
+  --vp-c-warning-2: #d97706;
+
+  /* 字体：弃通用字体，用 Noto 配对 */
+  --vp-font-family-base: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --vp-font-family-mono: "Space Grotesk", "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+
+  /* 背景：非纯白，带极淡冷暖分层，制造纵深 */
+  --vp-c-bg: #f7f8fc;
+  --vp-c-bg-alt: #eef1f8;
+  --vp-c-bg-elv: #ffffff;
+  --vp-c-text-1: #16181f;
+  --vp-c-text-2: #3b4252;
+  --vp-c-text-3: #5b6577;
+}
+
+/* 标题用衬线展示字体，制造主张（区别于正文无衬线） */
+.vp-doc h1, .vp-doc h2, .vp-doc h3, .vp-doc h4,
+.VPHero .name, .VPHome .clip, .VPNav .title,
+.VPSidebarGroup .text, .VPSidebarItem .text {
+  font-family: "Noto Serif SC", "Songti SC", serif;
+  letter-spacing: -.01em;
+}
+
+/* 浅色主题：nav / sidebar 底色 + 全局轻微径向纵深 */
+:root {
+  --vp-nav-bg-color: rgba(255, 255, 255, .82);
+  --vp-sidebar-bg-color: #f3f5fb;
+}
+body {
+  background:
+    radial-gradient(1100px 560px at 6% -6%, rgba(13, 125, 110, .10), transparent 56%),
+    radial-gradient(1000px 520px at 100% 0%, rgba(79, 70, 229, .08), transparent 55%),
+    var(--vp-c-bg);
+  background-attachment: fixed;
+}
+
+/* 暗色主题：深蓝近黑，品牌提亮 */
+.dark {
+  --vp-sidebar-bg-color: #0b1020;
+  --vp-c-brand-1: #818cf8;
+  --vp-c-brand-2: #6366f1;
+  --vp-c-brand-3: #4f46e5;
+  --vp-c-accent: #15a394;
+  --vp-c-text-1: #eef1f8;
+  --vp-c-text-2: #c3cad9;
+  --vp-c-text-3: #9aa6ba;
+  --vp-c-bg: #0b1020;
+  --vp-c-bg-alt: #0e1426;
+  --vp-c-bg-elv: #131a2e;
+}
+.dark body {
+  background:
+    radial-gradient(1100px 560px at 6% -6%, rgba(13, 125, 110, .18), transparent 56%),
+    radial-gradient(1000px 520px at 100% 0%, rgba(99, 102, 241, .16), transparent 55%),
+    var(--vp-c-bg);
+  background-attachment: fixed;
+}
+
+/* 内容区限宽，避免行过长（文档阅读舒适区 ~48rem） */
+.VPDoc .content .content-container { max-width: 48rem; }
+
+/* 首页 hero 品牌渐变标题 */
+.VPHero .name,
+.VPHome .clip {
+  background: linear-gradient(120deg, #0d7d6e, #4f46e5 70%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* custom-block 语义色（复用旧站 tip/warn/info 体系） */
+.vp-doc .custom-block.tip { border-color: var(--vp-c-accent); }
+.vp-doc .custom-block.tip .custom-block-title { color: var(--vp-c-accent); }
+.vp-doc .custom-block.warning { border-color: var(--vp-c-warning-2); }
+.vp-doc .custom-block.warning .custom-block-title { color: var(--vp-c-warning-1); }
+
+/* 可见焦点态（无障碍） */
+:focus-visible { outline: 2px solid var(--vp-c-brand-2); outline-offset: 2px; }
+
+/* 代码块圆角与等宽字体 */
+.vp-doc div[class*='language-'] { border-radius: 10px; }
+.vp-doc code { font-family: var(--vp-font-family-mono); }
+
+/* 表格在文档内更好看 */
+.vp-doc table { display: table; width: 100%; margin: 16px 0; }
+.vp-doc th, .vp-doc td { border: 1px solid var(--vp-c-divider); padding: 8px 12px; }
+.vp-doc th { background: var(--vp-c-bg-alt); }

@@ -1,0 +1,10 @@
+# 依赖与生成物（不入库）
+node_modules/
+.vitepress/dist/
+.vitepress/cache/
+# 注：package-lock.json 保留入库，用于复现依赖版本
+
+# 日志与系统文件
+*.log
+.DS_Store
+Thumbs.db
