@@ -51,8 +51,48 @@ flowchart TD
 
 ## 源码导读：最值得看的两处
 
-- **工具注册表**：工具如何登记、校验参数、在 harness 里被授权执行——呼应 03 harness 的"权限系统"。
-- **对话循环**：每一轮"思考 → 工具调用 → 结果回填 → 验证"怎么串起来——呼应 04 loop 的五零件。
+### ① 工具注册表（tool registry）—— harness 的权限落点
+
+工具在 Hermes 里以**声明式 schema 注册**，由注册表统一登记、校验参数、并在 harness 授权后才执行。典型形态（依据 NousResearch/hermes-agent 的工具注册机制，【事实】；具体装饰器/类名以你拉取的源码版本为准）：
+
+```python
+# 示意：把一个函数登记为 agent 可调用的工具
+@tool_registry.register(
+    name="read_file",
+    description="读取指定路径的文件内容（只读，不改文件）",
+    params={"path": "str"},
+    permission="read",          # 权限标签：由 harness 的 allow/deny 判定
+)
+def read_file(path: str) -> str:
+    with open(path, encoding="utf-8") as f:
+        return f.read()
+```
+
+注册后发生三件事（这正是 [03 harness](/concepts/harness) 的机制落点）：
+1. **登记入表**：agent 在 system prompt 里看到该工具的 schema（名称 + 描述 + 参数）；
+2. **参数校验**：调用前由注册表按 `params` 校验，非法参数直接拒绝，不进模型；
+3. **权限拦截**：`permission="read"` 与 harness 的 allow/deny 矩阵比对，越权调用被**确定性拒绝**（呼应 [3-1 权限矩阵](/concepts/harness/mechanism)）。
+
+> 要点：**工具不是"模型想调就能调"**——注册表 + 权限是 harness 的硬边界。
+
+### ② 对话循环（loop）—— 五零件的真实串联
+
+每一轮"思考 → 工具调用 → 结果回填 → 验证"的骨架：
+
+```python
+def run_turn(user_input, tools, max_iter=10):
+    messages = [{"role": "user", "content": user_input}]
+    for i in range(max_iter):                       # 刹车1：迭代上限
+        resp = llm.chat(messages, tools=tools)      # Agent 推理
+        if not resp.tool_calls:                     # 无工具调用 → 直接作答
+            return resp.content
+        for call in resp.tool_calls:
+            result = registry.invoke(call)          # 经注册表（含权限校验）
+            messages.append(tool_result_msg(call, result))
+        # 结果回填 messages，进入下一轮 → 直到模型不再要工具或触顶
+    return "达到迭代上限，已停止"                      # 刹车2：兜底
+```
+> 对应 [04 loop 五零件](/concepts/loop)：`messages` 是 **Prompter 组装的产物**，`llm.chat` 是 **Agent 执行**，`registry.invoke` 受 **harness 权限**约束，`max_iter` 是**三刹车之一**。这段把 03 与 04 串在了一起。
 
 ## 跑起来 + 扩展一个工具/技能
 

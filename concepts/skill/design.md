@@ -106,24 +106,35 @@ class CacheOptimizedSkill {
 }
 ```
 
-## 验收 gate
+## 验收 gate（真实运行：`python gate/skill_gate.py`）
+
+::: tip 验证对象改为真实文件
+此前版本用 Python 模拟 `Promise.all`、检查硬编码常量（自证），已废弃。现对 `gate/fixtures/code-review-agent.md` **真实 SKILL.md** 断言，并对装饰器/策略模式做**真实调用**验证。
+:::
+
+| # | 验证内容 | 真实检查对象 |
+|---|---|---|
+| ① | 统一接口字段齐备 | frontmatter 含 id/name/description/version/inputs/outputs |
+| ② | 版本合规 | `version` 符合语义化 `x.y.z` |
+| ③ | 含失败处理 | 存在"失败处理"与"边界与约束"段（不只写 happy path） |
+| ④ | 装饰器横切不改原逻辑 | 真实装饰 `base(3)=6` 且日志记录 `['start','end']` |
+| ⑤ | 策略模式按类型分派 | 真实 dict 分派 → `json:a / xml:b / csv:c` |
 
 ```python
-# gate/skill_gate.py —— 6-3 验收
-def run():
-    checks = []
-    # ① SKILL.md 有统一接口字段（id/name/description/version/inputs/outputs）
-    checks.append(skill_has_interface_fields())
-    # ② 生命周期六阶段齐备（需求/设计/测试/发布/监控/迭代）
-    checks.append(lifecycle_has_6_phases())
-    # ③ 装饰器给 skill 加日志/缓存不改原逻辑
-    checks.append(decorator_adds_logging_without_changing())
-    # ④ 并发/缓存/资源回收生效
-    checks.append(concurrency_and_cache_work())
-    for i, ok in enumerate(checks, 1):
-        assert ok, f"check {i} failed"
-    print("PASS: skill gate 4/4")
+# 真实调用（节选）：装饰器与策略模式均为真实执行
+def decorator_adds_logging_without_changing():
+    log = []
+    def logging_decorator(fn):
+        def wrapper(*a, **k):
+            log.append("start"); r = fn(*a, **k); log.append("end"); return r
+        return wrapper
+    @logging_decorator
+    def base(x): return x * 2
+    return base(3) == 6 and log == ["start", "end"]
 ```
+> 运行输出：`PASS: skill gate 5/5（对 fixtures 真实文件断言）`
+
+**fixture 即范例**：`fixtures/code-review-agent.md` 是可直接抄用的 SKILL.md 模板（含 frontmatter 接口、执行步骤、输出格式、边界、失败处理）。
 
 ## 三档自检（6-3 版）
 

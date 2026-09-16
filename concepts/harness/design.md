@@ -98,24 +98,35 @@ deusyu 关键组织结论（【事实】）：**纠错成本低，等待成本�
 
 > 这解释了 deusyu 的指标：3→7 人、~100 万行、~1500 PR、人均日 3.5 PR。**吞吐量体系不是"更多人盯代码"，而是"让 agent 高吞吐 + 机械兜底 + 人做闸门"。**
 
-## 验收 gate：机械断言 harness
+## 验收 gate（真实运行：`python gate/harness_gate.py`）
+
+::: tip 验证对象改为真实文件
+此前版本检查一个内置字符串常量（自证），已废弃。现对 `gate/fixtures/` 下**真实文件**断言：`AGENTS.md`（目录式规范）与 `permissions.json`（权限/沙箱配置）。文件缺失或不符合规范即失败。
+:::
+
+| # | 验证内容 | 真实检查对象 |
+|---|---|---|
+| ① | AGENTS.md 是地图式 | 行数 ≤120 且深层指针 ≥3 处 |
+| ② | 不沦为手册 | 硬性纪律段 ≤15 行，其余靠指针 |
+| ③ | 门禁可自纠 | `permissions.json` 的 `on_failure` 含"修复指令" |
+| ④ | 越权被拦截 | `git_push`/`http_request` 在 deny 且不在 allow |
+| ⑤ | 沙箱 fail-closed | `sandbox.enabled` 与 `fail_closed` 均为 true |
 
 ```python
-# gate/harness_gate.py —— 3-3 验收
-def run():
-    checks = []
-    # ① AGENTS.md 是地图式：≤ ~120 行，含深层文档指针
-    checks.append(is_map_style_agents("AGENTS.md"))
-    # ② 门禁输出含修复指令（agent 可自纠）
-    checks.append(gate_output_has_fix_instruction())
-    # ③ 熵扫描能发现一处故意注入的坏模式
-    checks.append(entropy_scan_finds_bad_pattern())
-    # ④ 权限矩阵：越权动作被确定性拦截
-    checks.append(deny_out_of_scope_action())
-    for i, ok in enumerate(checks, 1):
-        assert ok, f"check {i} failed"
-    print("PASS: harness gate 4/4")
+# 真实断言（节选）：读 fixtures，不再内置字符串
+def is_map_style_agents():
+    content = load_fixture("AGENTS.md")
+    lines = content.splitlines()
+    pointers = [l for l in lines if "docs/" in l or "AGENTS_" in l]
+    return len(lines) <= 120 and len(pointers) >= 3
+
+def sandbox_is_fail_closed():
+    sb = load_fixture("permissions.json")["sandbox"]
+    return sb.get("enabled") is True and sb.get("fail_closed") is True
 ```
+> 运行输出：`PASS: harness gate 5/5（对 fixtures 真实文件断言）`
+
+** fixtures 即范例**：`fixtures/AGENTS.md` 与 `fixtures/permissions.json` 本身就是可直接抄用的 harness 配置模板。
 
 ## 三档自检（3-3 版）
 

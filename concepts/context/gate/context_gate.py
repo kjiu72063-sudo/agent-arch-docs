@@ -60,13 +60,30 @@ def dse_is_deterministic():
     return dse_extract(txt) == dse_extract(txt)   # 同一输入两次同输出
 
 
+def count_tokens(text, enc_name="cl100k_base"):
+    """真实 tokenizer 计数（tiktoken）。chat 模型可用 encoding_for_model，
+    这里用 cl100k_base 作为 gpt-4o/claude 近似的确定基线。"""
+    import tiktoken
+    enc = tiktoken.get_encoding(enc_name)
+    return len(enc.encode(text))
+
+
 def tiktoken_differs_from_split():
-    """示意：中文/代码用真实 tokenizer 计数与 len(split) 有差异。"""
-    sample = "def f():\n    return '中文测试'"
-    split_est = len(sample.split())
-    # 真实 tokenizer 对中文/符号通常产生 > 空格切分 的 token 数
-    realistic = 9  # 演示值；真实用 tiktoken 等
-    return realistic != split_est
+    """真实验证：中文/代码的真实 token 数与 len(split()) 估算不同。
+    这证明 2-1 骨架用 len(split()) 会低估预算，必须换真实 tokenizer。"""
+    sample = "def f():\n    return '中文测试'"      # 含中文与代码符号
+    split_est = len(sample.split())                  # 空格切分估算
+    real = count_tokens(sample)                      # 真实 tokenizer
+    print(f"    split估算={split_est}, 真实tokens={real}")
+    return real != split_est
+
+
+def chinese_token_cost_is_real():
+    """真实验证：中文按字符计 token，长中文段落显著消耗预算（不是 1 个词 1 token）。"""
+    zh = "上下文工程是在有限窗口内动态选取组织注入压缩信息"   # 24 个汉字
+    n = count_tokens(zh)
+    print(f"    中文 {len(zh)} 字 -> {n} tokens")
+    return n > 0 and n != len(zh.split())            # 与空白切分（=1）必然不同
 
 
 def main():
@@ -75,11 +92,12 @@ def main():
         compaction_not_bypass_log(),
         dse_is_deterministic(),
         tiktoken_differs_from_split(),
+        chinese_token_cost_is_real(),
     ]
     for i, ok in enumerate(checks, 1):
         print(f"check{i}: {'PASS' if ok else 'FAIL'}")
     assert all(checks), "context gate failed"
-    print("PASS: context gate 4/4")
+    print("PASS: context gate 5/5（真实 tokenizer 已启用）")
 
 
 if __name__ == "__main__":

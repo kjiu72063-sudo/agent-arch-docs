@@ -11,6 +11,9 @@ export default withMermaid({
   lastUpdated: true,
   cleanUrls: true,
 
+  // gate/ 下的 fixtures 是验收脚本的检查对象（测试资产），不参与站点渲染
+  srcExclude: ['**/fixtures/**'],
+
   // Mermaid 全局配置：亮色用 neutral，暗色由插件自动切换为内置 dark。
   mermaid: {
     securityLevel: 'loose',

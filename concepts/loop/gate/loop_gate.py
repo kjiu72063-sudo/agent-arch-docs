@@ -1,85 +1,103 @@
-"""loop_gate.py — loop 章 L5 验收（示意，依赖 maker/checker 模块则需注入）
+"""loop_gate.py — loop 章验收：**确定性控制流部分**（不验证 LLM 输出质量）
 运行：python gate/loop_gate.py
+
+范围声明（重要）：
+  本 gate 只验证**不依赖模型**的循环控制流：三刹车（迭代/成本/无进展）、
+  Goal 布尔判定的短路、以及"满意才退出"的语义。
+  它**不**验证 LLM 产出质量——那需要真实模型调用与评估集，不在本 gate 范围。
+  因此本文件命名为 loop_gate 而非 loop_demo：它验证的是真实的控制流逻辑，
+  但断言对象是可确定的循环结构，不是模型。
 """
 
-
-class FakeResult:
-    def __init__(self, output, cost=0.1, passed=False):
-        self.output = output
-        self.cost = cost
-        self.passed = passed
-
-
-class FakeMaker:
-    """模拟生成器：给定任务与模式返回结果。"""
-
-    def __init__(self, good_when_goal_met):
-        self.good_when_goal_met = good_when_goal_met
-        self.calls = 0
-
-    def run(self, task, mode):
-        self.calls += 1
-        # 模拟：Open 模式能发现未预设的路径
-        if mode == "open":
-            return FakeResult("discovered_unknown", cost=0.2, passed=True)
-        # closed：逐步逼近目标
-        if self.calls >= 3 or self.good_when_goal_met:
-            return FakeResult("solution", cost=0.1, passed=True)
-        return FakeResult("partial", cost=0.1, passed=False)
-
-
-class FakeChecker:
-    def evaluate(self, result):
-        return result  # 直接读结果的 passed 字段（独立评估器抽象）
-
-
-def run_loop(mode="closed", max_iter=10, max_cost=5.0, no_progress=3,
-             good_when_goal_met=True):
-    maker, checker = FakeMaker(good_when_goal_met), FakeChecker()
+def run_loop(step_fn, goal_fn, max_iter=10, max_cost=5.0, no_progress=3):
+    """真实的循环控制流：三刹车 + goal 短路。step_fn 由调用方注入（可为真实或桩）。"""
     iterations = cost = stalled = 0
     last = None
+    history = []
     while iterations < max_iter and cost < max_cost:
-        result = maker.run("task", mode)
-        cost += result.cost
+        result = step_fn(iterations)
+        cost += result["cost"]
         iterations += 1
-        if checker.evaluate(result).passed:
-            return result, iterations, cost, True
-        if result.output == last:
+        history.append(result["output"])
+        if goal_fn(result):                       # Goal 判定：满意才退出
+            return {"output": result["output"], "iterations": iterations,
+                    "cost": cost, "met": True, "history": history}
+        if result["output"] == last:              # 无进展检测
             stalled += 1
             if stalled >= no_progress:
                 break
         else:
             stalled = 0
-        last = result.output
-    return None, iterations, cost, False
+        last = result["output"]
+    return {"output": None, "iterations": iterations, "cost": cost,
+            "met": False, "history": history}
 
 
-def independent_checker_catches_bad_result():
-    """独立 checker 应能拦下生成器自评通过的坏结果（示意：passed 被 checker 判定为假）。"""
-    # 生成器自评 passed=True，但独立 checker 发现不满足 rubric → 拦下
-    generated_self_passed = True
-    checker_rubric_pass = False
-    return checker_rubric_pass is False and generated_self_passed is True
+def brake_max_iterations():
+    """真实验证：迭代上限生效 —— 永不达标的 step 必须在 max_iter 次后停止。"""
+    def step(i):
+        return {"output": f"attempt-{i}", "cost": 0.1}
+
+    r = run_loop(step, goal_fn=lambda x: False, max_iter=3)
+    print(f"    iterations={r['iterations']} (期望=3), met={r['met']}")
+    return r["iterations"] == 3 and r["met"] is False
+
+
+def brake_max_cost():
+    """真实验证：成本上限生效 —— 单次成本高时提前停，不超过预算太多。"""
+    def step(i):
+        return {"output": f"attempt-{i}", "cost": 1.0}
+
+    r = run_loop(step, goal_fn=lambda x: False, max_iter=100, max_cost=2.5)
+    print(f"    cost={r['cost']} (预算=2.5), iterations={r['iterations']}")
+    return r["cost"] <= 3.5 and r["met"] is False      # 允许最后一次越界即停
+
+
+def brake_no_progress():
+    """真实验证：连续无进展（输出重复）触发停止，即使远未到迭代上限。"""
+    def step(i):
+        return {"output": "same-output", "cost": 0.1}   # 恒定输出 = 无进展
+
+    r = run_loop(step, goal_fn=lambda x: False, max_iter=100, no_progress=3)
+    print(f"    iterations={r['iterations']} (期望=4: 首次+连续3次无进展), met={r['met']}")
+    return r["iterations"] == 4 and r["met"] is False
+
+
+def goal_short_circuit():
+    """真实验证：Goal 一旦满足立即退出，不跑满上限。"""
+    def step(i):
+        return {"output": f"attempt-{i}", "cost": 0.1}
+
+    r = run_loop(step, goal_fn=lambda x: x["output"] == "attempt-2", max_iter=100)
+    print(f"    met={r['met']}, iterations={r['iterations']} (期望=3)")
+    return r["met"] is True and r["iterations"] == 3
+
+
+def loop_continues_until_goal_or_brakes():
+    """真实验证：未达标时循环继续（不是一次就退出）。"""
+    calls = []
+
+    def step(i):
+        calls.append(i)
+        return {"output": f"attempt-{i}", "cost": 0.1}
+
+    r = run_loop(step, goal_fn=lambda x: x["output"] == "attempt-4", max_iter=10)
+    print(f"    调用次数={len(calls)}, met={r['met']}")
+    return len(calls) == 5 and r["met"] is True
 
 
 def main():
-    checks = []
-    # ① Open 模式能探索出未知路径
-    r, it, c, ok = run_loop(mode="open", good_when_goal_met=False)
-    checks.append(ok and r.output == "discovered_unknown")
-    # ② 三刹车：max_iter=1 必然只跑 1 次就停
-    r, it, c, ok = run_loop(max_iter=1, good_when_goal_met=False)
-    checks.append(it <= 1)
-    # ③ 成本刹车：max_cost 很小则提前停
-    r, it, c, ok = run_loop(max_cost=0.05, good_when_goal_met=False)
-    checks.append(c <= 0.05 or it <= 2)
-    # ④ 独立 checker 拦下坏结果
-    checks.append(independent_checker_catches_bad_result())
-
+    checks = [
+        brake_max_iterations(),
+        brake_max_cost(),
+        brake_no_progress(),
+        goal_short_circuit(),
+        loop_continues_until_goal_or_brakes(),
+    ]
     for i, ok in enumerate(checks, 1):
         print(f"check{i}: {'PASS' if ok else 'FAIL'}")
     assert all(checks), "loop gate failed"
-    print("PASS: loop gate 4/4")
+    print("PASS: loop gate 5/5（确定性控制流；不验证 LLM 质量）")
 
 
 if __name__ == "__main__":

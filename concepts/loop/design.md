@@ -83,24 +83,42 @@ def run_loop(mode="closed", task=None, goal=lambda: False,
     return None                                # 超限/无进展 → 失败返回
 ```
 
-## 验收 gate
+## 验收 gate（真实运行：`python gate/loop_gate.py`）
+
+::: warning 验证范围（务必看清）
+本 gate 只验证**不依赖模型**的**确定性控制流**：三刹车与 Goal 短路。它**不验证 LLM 产出质量**（那需要真实模型调用 + 评估集）。此前版本用 `FakeMaker/FakeChecker` 自证，已废弃。
+:::
+
+实际断言的 5 项（均为真实控制流，实测 PASS）：
+
+| # | 验证内容 | 期望 |
+|---|---|---|
+| ① | 迭代上限刹车 | 永不达标时，恰好停在 `max_iter` 次 |
+| ② | 成本上限刹车 | 超预算即停，不无限烧钱 |
+| ③ | 无进展刹车 | 输出重复时，连续 N 次后停止（未到迭代上限也停） |
+| ④ | Goal 短路 | Goal 一满足立即返回，不跑满上限 |
+| ⑤ | 未达标继续 | Goal 未满足时循环继续，不是一次就退出 |
 
 ```python
-# gate/loop_gate.py —— 4-3 验收
-def run():
-    checks = []
-    # ① Open 模式能探索出未知路径（不预设步骤仍能完成）
-    checks.append(run_loop(mode="open", task=unknown_task) is not None)
-    # ② 三刹车：超限/无进展必然停止，不无限烧钱
-    checks.append(run_loop(max_iter=1) returns within 1 iter)
-    # ③ Maker/Checker 分离：恶意注入的自评被独立 checker 拦下
-    checks.append(independent_checker_catches_bad_result())
-    # ④ 满意才退出：goal 为假时循环继续（有限界内）
-    checks.append(loop_continues_until_goal_or_brakes())
-    for i, ok in enumerate(checks, 1):
-        assert ok, f"check {i} failed"
-    print("PASS: loop gate 4/4")
+# 真实循环控制流（gate/loop_gate.py 核心，已去除 Fake 组件）
+def run_loop(step_fn, goal_fn, max_iter=10, max_cost=5.0, no_progress=3):
+    iterations = cost = stalled = 0
+    last = None
+    while iterations < max_iter and cost < max_cost:
+        result = step_fn(iterations)
+        cost += result["cost"]; iterations += 1
+        if goal_fn(result):                  # 满意才退出
+            return {"iterations": iterations, "cost": cost, "met": True}
+        if result["output"] == last:         # 无进展检测
+            stalled += 1
+            if stalled >= no_progress:
+                break
+        else:
+            stalled = 0
+        last = result["output"]
+    return {"iterations": iterations, "cost": cost, "met": False}
 ```
+> 运行输出：`PASS: loop gate 5/5（确定性控制流；不验证 LLM 质量）`
 
 ## 三档自检（4-3 版）
 

@@ -59,15 +59,75 @@ flowchart TD
 
 长任务里 Claude Code 会对历史会话做**压缩摘要**，释放上下文窗口——正是 02 context 的"压缩/总结策略"落地。
 
-## 真机配置（CLAUDE.md / hook / skill / MCP）
+## 真机配置：三份可直接抄用的真实文件
 
-1. 项目根建 `CLAUDE.md`，写项目宪法（角色、技术栈、禁止事项）——harness 注入的常驻上下文。
-2. 用 hook 挂机械化守护（提交前 lint/测试）。
-3. 按需加 Skill（能力扩展）与 MCP（外部服务）。
-4. 调权限层级，观察工具在每层能做什么。
+下面三份配置是 Claude Code harness 的**核心可运行资产**（格式依据 sawzhang《deep-dive-claude-code》与 Anthropic 官方设置，【事实】；具体键名以你安装的版本为准）。
+
+### ① 项目级 `CLAUDE.md`（等价 AGENTS.md，由 harness 注入 context）
+
+```markdown
+# CLAUDE.md
+
+## 项目
+- 类型：FastAPI + React；包管理 uv / pnpm。
+- 测试：`uv run pytest`；lint：`uv run ruff check .`
+
+## 纪律（只写机器可验证的）
+- 改动必须通过 pytest + ruff，否则不得提交。
+- 禁止直接修改 lockfile 与 .env。
+- 提交信息用 Conventional Commits。
+
+## 目录指针（渐进披露，不展开全文）
+- 架构 → docs/architecture.md
+- 接口约定 → docs/api.md
+```
+
+### ② 权限配置 `settings.json`（六层权限的工程落点）
+
+```json
+{
+  "permissions": {
+    "allow": [
+      "Read(**)",
+      "Bash(uv run pytest:*)",
+      "Bash(uv run ruff:*)",
+      "Bash(git diff:*)"
+    ],
+    "deny": [
+      "Bash(rm -rf:*)",
+      "Bash(curl:*)",
+      "Write(.env)",
+      "Write(**/*.lock)"
+    ],
+    "defaultMode": "acceptEdits"
+  }
+}
+```
+> `defaultMode` 对应权限层级：只读 → 接受编辑 → 完全自动执行。越往上越能办事、风险越大（呼应 [03 harness](/concepts/harness) 的权限取舍）。
+
+### ③ Hook：机械化守护（改文件即跑门禁）
+
+```json
+{
+  "hooks": {
+    "PreToolUse": [
+      { "matcher": "Bash",
+        "hooks": [{ "type": "command",
+                    "command": "test \"$CLAUDE_TOOL_INPUT\" != \"rm -rf /\" || exit 2" }] }
+    ],
+    "PostToolUse": [
+      { "matcher": "Edit|Write",
+        "hooks": [{ "type": "command", "command": "uv run ruff check . || exit 2" }] }
+    ]
+  }
+}
+```
+> Hook 让"机械化执行"落地：`PostToolUse` 在每次改文件后**自动跑 ruff**，不合规 `exit 2` 阻断——把可靠性从"模型自觉"变成"工程保证"。这正是 [3-1 门禁](/concepts/harness/mechanism) 的真实范例。
+
+**上手顺序**：① 建 `CLAUDE.md` → ② 配 `settings.json` 权限 → ③ 挂 hook 门禁 → ④ 按需加 Skill / MCP。
 
 ::: info 【事实】
-来源：github.com/sawzhang/deep-dive-claude-code（multi-part 结构已确认，25 章 + 2 附录；许可证按 MIT 处理）。"六层权限"语义以该仓库与官方文档核对为准；"凸显 harness+loop"是本体系的结构化定位（【推断】）。
+来源：github.com/sawzhang/deep-dive-claude-code（multi-part 结构已确认，25 章 + 2 附录；许可证按 MIT 处理）。上述配置格式以该仓库与 Anthropic 官方文档为准；"凸显 harness+loop"是本体系的结构化定位（【推断】）。
 :::
 
 ## 小测验

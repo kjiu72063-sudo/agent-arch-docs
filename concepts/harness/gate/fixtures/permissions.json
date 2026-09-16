@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "read:*",
+      "run:pytest",
+      "run:ruff",
+      "run:uv"
+    ],
+    "deny": [
+      "http_request:*",
+      "git_push:*"
+    ],
+    "require_approval": [
+      "write:src/**",
+      "write:tests/**"
+    ]
+  },
+  "sandbox": {
+    "enabled": true,
+    "fail_closed": true,
+    "backend": "landlock",
+    "note": "无可用后端时抛 SANDBOX_UNAVAILABLE，绝不裸跑"
+  },
+  "gate": {
+    "checks": ["ruff", "pytest"],
+    "on_failure": "输出含修复指令，供 agent 自纠后重跑"
+  }
+}

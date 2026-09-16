@@ -93,11 +93,24 @@ def run():
     # ③ DSE 对同一输入给出确定性输出
     checks.append(dse_is_deterministic())
     # ④ 真实 tokenizer 与 len(split) 估算存在差异（需切换真计数）
+    # ④ 真实 tokenizer（tiktoken）与 len(split) 估算存在差异
     checks.append(tiktoken_differs_from_split())
+    # ⑤ 中文按字计 token，长中文段落显著消耗预算
+    checks.append(chinese_token_cost_is_real())
     for i, ok in enumerate(checks, 1):
         assert ok, f"check {i} failed"
-    print("PASS: context gate 4/4")
+    print("PASS: context gate 5/5（真实 tokenizer 已启用）")
 ```
+
+::: tip 实测输出（真实 tiktoken，非模拟）
+```
+    split估算=4, 真实tokens=10     ← 空格切分低估 2.5 倍
+    中文 24 字 -> 27 tokens        ← 中文按字计，不是"1 词 1 token"
+check1..check5: PASS
+PASS: context gate 5/5（真实 tokenizer 已启用）
+```
+这组数据直接证明：2-1 骨架里的 `len(content.split())` **会严重低估中文/代码的真实开销**，生产必须换真实 tokenizer（此前版本用硬编码 `realistic = 9` 自证，已废弃）。
+:::
 
 ## 三档自检（2-3 版）
 
