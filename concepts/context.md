@@ -27,6 +27,19 @@ flowchart LR
   style E fill:#0d7d6e,color:#fff
 ```
 
+## 本章地图
+
+本章不再是"一篇短文"，而是拆成两层，对齐 Track 01 prompt 的子页深度：
+
+| 子页 | 内容 | 对应工程动作 |
+|---|---|---|
+| [📐 2-1 机制详解](/concepts/context/mechanism) | 预算分配算例、分层注入、渐进披露、压缩、spill、compaction 触发、记忆分层，**附可运行预算控制伪代码** | 设计 + 实现 |
+| [⚠️ 2-2 常见坑 + 自检](/concepts/context/pitfalls) | 上下文填满、相关度不足、压缩丢关键信息等坑 + **产物化三档**（精通=交一份上下文组装器） | 验证 + 自检 |
+
+::: info 承接关系
+02 承接 01：01 讲"指令（prompt）怎么写"，02 讲"在窗口预算内，怎么把额外信息喂给模型"。02 的输出（一套受预算约束的上下文注入/压缩策略）是 03 harness 的输入之一——**AGENTS.md 等规则文件由 harness 管理、由 context 注入**。
+:::
+
 ## 上下文窗口 = 预算
 
 窗口不是无限大的。每类信息都**占用同一份预算**，必须取舍：
@@ -49,62 +62,7 @@ flowchart TD
 | 工具结果 | 波动大 | API 返回、文件内容 |
 
 ::: warning 事实与边界
-本页对"增强 LLM = 指令 + 上下文 + 工具"这一结构的描述，依据 **【事实】** Anthropic《Effective context engineering》《Building effective agents》两篇官方文章的论述。具体"窗口该给多少预算、何时注入"是**工程取舍（【建议】）**，没有唯一标准答案。
-:::
-
-## 核心策略
-
-### 1. 分层注入（Layered Injection）
-不同信息在不同阶段进入，不一次性堆满窗口：
-
-```mermaid
-flowchart LR
-  A["用户提问"] --> B{"需要哪些上下文？"}
-  B -->|基础| C["system + 当前对话"]
-  B -->|检索| D["向量库召回 Top-K"]
-  B -->|长期| E["记忆压缩摘要"]
-  C --> F["组装后注入"]
-  D --> F
-  E --> F
-  F --> G["模型生成"]
-  style F fill:#0d7d6e,color:#fff
-```
-
-### 2. 渐进式披露（Progressive Disclosure）
-先给"目录"，模型要用时再给"详情"，避免一开始就把长文档全塞进来。
-
-### 3. 压缩 / 总结（Compression）
-放不下时对旧对话、长工具结果做摘要，保留"要点"腾出预算。
-
-### 4. 记忆分层
-- **短期记忆**：当前对话轮次（天然在窗口内）。
-- **长期记忆**：跨会话沉淀，用摘要/向量存储，用时再召回。
-
-## 小测验
-
-::: details 点击展开题目与答案
-**Q1（选择）**：增强 LLM 由以下哪三块构成？  
-A. prompt + context + tools　B. prompt + model + GPU　C. context + cache + API  
-✅ A。依据 Anthropic 官方论述。
-
-**Q2（判断）**：上下文窗口越大，就不需要做 context engineering 了。  
-❌ 错。窗口再大也有上限，且长上下文会拖慢、稀释注意力，取舍仍然必要。
-
-**Q3（选择）**：渐进式披露的核心思想是？  
-A. 一次性塞满所有文档　B. 先给目录、按需给详情　C. 完全不检索  
-✅ B。
-:::
-
-## 三档自检（了解 / 熟悉 / 精通）
-
-| 档位 | 你能做到 |
-|---|---|
-| 了解 | 说清"增强 LLM = 指令 + 上下文 + 工具"，知道窗口是有限预算 |
-| 熟悉 | 能区分分层注入 / 渐进式披露 / 压缩三种策略，并说明何时用哪种 |
-| 精通 | 能在真实 agent 里设计记忆分层 + RAG 召回 + 预算上限，压住成本与遗忘 |
-
-::: tip 本页要点
-context engineering = 在有限窗口里"选对、组织对、按时注入、放不下就压缩"。它是 prompt 之后、harness 之前的关键一环——**信息摆对了，模型才做对**。
+本页对"增强 LLM = 指令 + 上下文 + 工具"这一结构的描述，依据 **【事实】** Anthropic《Effective context engineering》《Building effective agents》两篇官方文章的论述。具体"窗口该给多少预算、何时注入、如何压缩"是**工程取舍（【建议】）**，没有唯一标准答案，详见 [2-1 机制详解](/concepts/context/mechanism) 的落地算例。
 :::
 
 > 上一章：[01 prompt engineering](/concepts/prompt) ｜ 下一章：[03 harness engineering](/concepts/harness)

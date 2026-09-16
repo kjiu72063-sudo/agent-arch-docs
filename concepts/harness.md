@@ -27,6 +27,17 @@ flowchart LR
   style H fill:#0d7d6e,color:#fff
 ```
 
+## 本章地图
+
+| 子页 | 内容 | 对应工程动作 |
+|---|---|---|
+| [📐 3-1 机制详解](/concepts/harness/mechanism) | AGENTS.md 样例、权限 allow/deny 矩阵、机械化执行门禁脚本、fail-closed 示例、熵管理 | 设计 + 实现 |
+| [⚠️ 3-2 常见坑 + 自检](/concepts/harness/pitfalls) | 权限过宽、靠模型自觉、缺机械化守护、熵失控等坑 + **产物化三档**（精通=交 AGENTS.md+权限表+验证门禁） | 验证 + 自检 |
+
+::: info 承接关系
+02 产出"受预算约束的上下文"。03 承接它：**AGENTS.md 等规则文件由 harness 管理、由 context 注入**。同时 03 接住 01 `think-tools-test` 埋的落点——"用验证守护不变量"正是 harness 的**机械化执行**思想。
+:::
+
 ## harness 内部由什么构成
 
 ```mermaid
@@ -41,52 +52,8 @@ flowchart TD
   style H fill:#0d7d6e,color:#fff
 ```
 
-## 关键机制
-
-### 1. AGENTS.md 注入
-把"项目宪法"常驻注入上下文——角色边界、技术栈、交付格式、禁止事项，让 agent 每次开工先读到规则。
-
-### 2. 权限系统（Permission）
-工具一旦授予就可能真改文件、真发请求、真花钱。harness 用 allow/deny 把"能做什么"明文限定，越权动作直接拦截。
-
-### 3. 机械化执行（Mechanical Execution）
-不靠模型"自觉"，而靠**确定的外部程序**兜底：linter 守护、自动化测试、格式校验在每步强制运行，出错就阻断——把可靠性从"模型概率"变成"工程保证"。
-
-### 4. 熵管理（Entropy Management）
-任务越跑越乱（上下文膨胀、目标漂移）。harness 通过"仓库即记录系统"、压缩、阶段归档，降低系统熵，让长任务可复现、可审计。
-
-### 5. 仓库即记录系统（Repo as Record）
-把决策、变更、日志留在仓库里（而非只存在对话里），使过程可追溯、可回放。
-
 ::: warning 事实与边界
-本页对"harness"概念与机制的描述，依据 **【事实】** OpenAI《Harness Engineering》一文，以及 Mitchell Hashimoto 对该术语的推广使用、deusyu/harness-engineering 仓库总结的 AGENTS.md 注入 / 权限系统 / 机械化执行 / 熵管理 / 仓库即记录系统等原则。各框架的具体实现细节是**工程实践（【建议】）**，可按项目裁剪。
-:::
-
-## 小测验
-
-::: details 点击展开题目与答案
-**Q1（选择）**：harness 主要负责的是？  
-A. 让模型看到更清晰的指令　B. 承载 agent 的运行时与权限约束　C. 训练模型参数  
-✅ B。它不替模型思考，而是提供外壳与约束。
-
-**Q2（判断）**：权限系统可以用"让模型自觉别乱改文件"来替代。  
-❌ 错。harness 用确定的 allow/deny 拦截，而非依赖模型自觉。
-
-**Q3（选择）**：机械化执行（linter/测试守护）的意义是？  
-A. 让模型更聪明　B. 把可靠性从概率变成工程保证　C. 减少上下文长度  
-✅ B。
-:::
-
-## 三档自检（了解 / 熟悉 / 精通）
-
-| 档位 | 你能做到 |
-|---|---|
-| 了解 | 说清 harness 与 prompt/context 的区别，列举其 4–5 个构成（工具/权限/环境/约束/守护） |
-| 熟悉 | 能解释 AGENTS.md 注入、权限系统、机械化守护各自解决什么问题 |
-| 精通 | 能为真实项目设计 harness：权限矩阵 + linter/测试守护 + 熵管理，让 agent 长任务不跑飞 |
-
-::: tip 本页要点
-harness = 承载 agent 的外壳与运行时。它用**权限 + 机械化守护 + 熵管理**把"强大的模型"变成"可控可复现的系统"——这是从 prompt 走向可落地 agent 的必经一关。
+本页对"harness"概念与机制的描述，依据 **【事实】** OpenAI《Harness Engineering》一文，以及 Mitchell Hashimoto 对该术语的推广使用、deusyu/harness-engineering 仓库总结的 AGENTS.md 注入 / 权限系统 / 机械化执行 / 熵管理 / 仓库即记录系统等原则。各框架的具体实现细节是**工程实践（【建议】）**，可按项目裁剪，落地方式见 [3-1 机制详解](/concepts/harness/mechanism)。
 :::
 
 > 上一章：[02 context engineering](/concepts/context) ｜ 下一章：[04 loop engineering](/concepts/loop)

@@ -68,11 +68,26 @@ export default withMermaid({
               { text: '1-7 常见坑 + 自检', link: '/concepts/prompt/pitfalls' },
             ],
           },
-          { text: '02 context engineering', link: '/concepts/context' },
-          { text: '03 harness engineering', link: '/concepts/harness' },
-          { text: '04 loop engineering', link: '/concepts/loop' },
-          { text: '05 graph engineering', link: '/concepts/graph' },
-          { text: '06 skill 体系架构', link: '/concepts/skill' },
+          { text: '02 context engineering', link: '/concepts/context', items: [
+            { text: '2-1 机制详解', link: '/concepts/context/mechanism' },
+            { text: '2-2 常见坑 + 自检', link: '/concepts/context/pitfalls' },
+          ]},
+          { text: '03 harness engineering', link: '/concepts/harness', items: [
+            { text: '3-1 机制详解', link: '/concepts/harness/mechanism' },
+            { text: '3-2 常见坑 + 自检', link: '/concepts/harness/pitfalls' },
+          ]},
+          { text: '04 loop engineering', link: '/concepts/loop', items: [
+            { text: '4-1 机制详解', link: '/concepts/loop/mechanism' },
+            { text: '4-2 常见坑 + 自检', link: '/concepts/loop/pitfalls' },
+          ]},
+          { text: '05 graph engineering', link: '/concepts/graph', items: [
+            { text: '5-1 机制详解', link: '/concepts/graph/mechanism' },
+            { text: '5-2 常见坑 + 自检', link: '/concepts/graph/pitfalls' },
+          ]},
+          { text: '06 skill 体系架构', link: '/concepts/skill', items: [
+            { text: '6-1 机制详解', link: '/concepts/skill/mechanism' },
+            { text: '6-2 常见坑 + 自检', link: '/concepts/skill/pitfalls' },
+          ]},
         ],
       },
       {
@@ -116,7 +131,7 @@ export default withMermaid({
     lastUpdatedText: '最后更新',
 
     footer: {
-      message: 'Agent 架构知识体系 · v0.4 Track 0/AB/C 全部补全',
+      message: 'Agent 架构知识体系 · v0.5 Track A 02-06 深度补足',
       copyright: '图多字少 · 关系图即导航',
     },
   },

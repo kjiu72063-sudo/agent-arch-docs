@@ -24,5 +24,5 @@ title: 1-7 常见坑 + 掌握自检
 ::: tip 本章小结
 prompt = 基座指令层。它朴素但决定成败；真正把 prompt 做得"能落地、能组合、不臃肿"，就开始通向 context 与 harness 了。
 
-> 下一章 `context engineering`（待编写）将讲"指令 + 额外上下文 + 工具"中的上下文预算与注入时机。
+> 下一章 [02 context engineering](/concepts/context) 将讲"指令 + 额外上下文 + 工具"中的上下文预算与注入时机。
 :::
