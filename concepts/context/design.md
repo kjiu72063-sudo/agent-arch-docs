@@ -1,12 +1,12 @@
 ---
-title: 2-3 context 设计决策与验证
+title: 2-2 context 设计决策与验证
 ---
 
-# 2-3 · context 设计决策与验证
+# 2-2 · context 设计决策与验证
 
 2-1 给了预算控制骨架、spill、compaction 双触发，本节把深度推到**设计者级**：compaction 的完整流水线怎么走、prune 与 summarize 什么时候各自出场、DSE 确定性信号提取是什么、真实 tokenizer 计量为何必要、以及如何保持"压缩不丢可审计性"。
 
-::: tip 承接 2-1 / 2-2
+::: tip 承接 2-1
 2-1 有预算记账 + spill + compaction 双触发（pressure / context-overflow）+ 记忆分层。本节是它们的**工程决策层**：把"触发"细化成"完整分派流水线"，并补 DSE 与审计性。
 :::
 
@@ -112,11 +112,11 @@ PASS: context gate 5/5（真实 tokenizer 已启用）
 这组数据直接证明：2-1 骨架里的 `len(content.split())` **会严重低估中文/代码的真实开销**，生产必须换真实 tokenizer（此前版本用硬编码 `realistic = 9` 自证，已废弃）。
 :::
 
-## 三档自检（2-3 版）
+## 三档自检（2-2 版）
 
 | 档位 | 必须提交的产物 |
 |---|---|
 | 熟悉 | 能解释 compaction 五步流水线与 prune/summarize 分派顺序 |
 | 精通 | 实现带 pressure/overflow 双触发 + prune/summarize 分派 + DSE 的上下文管线，且用真实 tokenizer 计量、事件可回放 |
 
-> 上一节：[2-2 常见坑 + 自检](/concepts/context/pitfalls) ｜ 下一章：[03 harness engineering](/concepts/harness)
+> 上一节：[2-1 context 机制详解](/concepts/context/mechanism) ｜ 下一节：[2-3 常见坑 + 自检](/concepts/context/pitfalls)

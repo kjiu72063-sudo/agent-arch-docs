@@ -1,8 +1,8 @@
 ---
-title: 2-2 context 常见坑 + 自检
+title: 2-3 context 常见坑 + 自检
 ---
 
-# 2-2 · context 常见坑 + 掌握自检
+# 2-3 · context 常见坑 + 掌握自检
 
 读机制还不够，要能**识别坑**并知道"什么算真的会了"。本节给四个常见坑 + 产物化三档自检。
 
@@ -31,4 +31,4 @@ title: 2-2 context 常见坑 + 自检
 上下文组装好之后，谁来承载它、约束它、反复消费它？——这就是 [03 harness engineering](/concepts/harness) 要解决的：**AGENTS.md 由 harness 管理、由 context 注入，loop 每轮读写这份 context**。
 :::
 
-> 上一节：[2-1 context 机制详解](/concepts/context/mechanism) ｜ 下一章：[03 harness engineering](/concepts/harness)
+> 上一节：[2-2 context 设计决策 + 验证](/concepts/context/design) ｜ 下一章：[03 harness engineering](/concepts/harness)

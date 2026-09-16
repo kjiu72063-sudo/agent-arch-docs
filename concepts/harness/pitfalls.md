@@ -1,8 +1,8 @@
 ---
-title: 3-2 harness 常见坑 + 自检
+title: 3-3 harness 常见坑 + 自检
 ---
 
-# 3-2 · harness 常见坑 + 掌握自检
+# 3-3 · harness 常见坑 + 掌握自检
 
 harness 最容易"看起来搭了、实际兜不住"。本节给四个常见坑 + 产物化三档自检。
 
@@ -29,4 +29,4 @@ harness 最容易"看起来搭了、实际兜不住"。本节给四个常见坑 
 harness 把"能做什么、被什么约束"定死之后，agent 需要在里面**反复执行、验证、重试**——这就是 [04 loop engineering](/concepts/loop)。loop 运行在 harness 内，每轮读写 context、受 harness 权限与预算约束。
 :::
 
-> 上一节：[3-1 harness 机制详解](/concepts/harness/mechanism) ｜ 下一章：[04 loop engineering](/concepts/loop)
+> 上一节：[3-2 harness 设计决策 + 验证](/concepts/harness/design) ｜ 下一章：[04 loop engineering](/concepts/loop)

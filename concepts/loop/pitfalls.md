@@ -1,8 +1,8 @@
 ---
-title: 4-2 loop 常见坑 + 自检
+title: 4-3 loop 常见坑 + 自检
 ---
 
-# 4-2 · loop 常见坑 + 掌握自检
+# 4-3 · loop 常见坑 + 掌握自检
 
 loop 最容易在"没设刹车 / 自我评估 / 上下文膨胀"上翻车。本节给四个常见坑 + 产物化三档。
 
@@ -29,4 +29,4 @@ loop 最容易在"没设刹车 / 自我评估 / 上下文膨胀"上翻车。本�
 一个 loop 反复迭代解决一件事；但当任务变成**多步骤、多角色、带分支**，需要上面那层结构把它们编排起来——这就是 [05 graph engineering](/concepts/graph)。graph 的**每个节点可以是一个 loop**。
 :::
 
-> 上一节：[4-1 loop 机制详解](/concepts/loop/mechanism) ｜ 下一章：[05 graph engineering](/concepts/graph)
+> 上一节：[4-2 loop 设计决策 + 验证](/concepts/loop/design) ｜ 下一章：[05 graph engineering](/concepts/graph)

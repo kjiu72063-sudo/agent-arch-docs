@@ -127,6 +127,97 @@ print(f"done: iterations={iterations}, cost={cost}, goal_met={goal_is_met()}")
 
 单步工具失败**不整轮崩溃**——重试或降级（如失败后改用更稳的备用工具/更简单的方案），并更新上下文后继续。
 
+## 三个完整实战案例（均出自 cnblogs《Loop Engineering 完全指南》，【事实】）
+
+### 案例 A · 夜间自动修 Bug（Claude Code 实现）
+
+**Goal**：修复昨日 CI 失败 + 处理 `good-first-issue` 标签的 Issue。**Trigger**：每天 6:00 cron。
+
+```bash
+# 触发器：每天早 6 点跑一次
+0 6 * * * cd /repo && claude-code --goal "Fix yesterday's CI failures"
+```
+```json
+{
+  "goal": "修复昨日 CI 失败 + 处理 good-first-issue 标签的 Issue",
+  "stop_conditions": { "max_iterations": 20, "max_cost_usd": 10,
+                        "target": "所有任务处理完 OR 测试全绿" }
+}
+```
+
+执行流程（**关键：Maker/Checker 分离 + worktree 并行隔离**）：
+
+```mermaid
+flowchart TD
+  T["Cron 6:00 触发"] --> D["① 发现工作\n扫 CI 失败/issue/lint"]
+  D --> W["② git worktree 隔离\n每任务独立工作目录"]
+  W --> MA["③ Writer Agent\n读 SKILL.md→改码→本地跑测试"]
+  MA --> CK["④ Reviewer Agent（独立，可用便宜模型）\n查规范/测试绿/diff 对 issue"]
+  CK -->|通过| PR["⑤ 自动建 PR + Slack 通知"]
+  CK -->|失败| TRI["放入 Triage 等人工"]
+  style CK fill:#b45309,color:#fff
+```
+```bash
+# ② 隔离环境：多任务可并行、互不干扰
+git worktree add ../fix-ci-123   -b fix/ci-123
+git worktree add ../fix-issue-456 -b fix/issue-456
+```
+
+> **效果**：每天早上 2–3 个 PR 已在等你 review。你从"写修复的人"变"审修复的人"，**杠杆 3–5 倍**。这就是"人退出执行循环、只做设计者与验收者"。
+
+### 案例 B · Web Scraping 自我修复（Maker/Checker 分离的最佳示范）
+
+**为什么适合 Loop**：爬虫领域已有现成的质量评估框架（Spidermon），"成功标准"天然可验证。
+
+**第 1 步 · 定义验证标准（Rubric）**：
+```javascript
+const rubric = {
+  required_fields: ['name', 'price', 'url'],
+  min_items: 5,
+  min_fill_rate: 0.95,   // 95% 字段必须非空
+  max_error_rate: 0.05
+};
+```
+
+**第 2 步 · 分离 Maker（爬虫）与 Checker（独立评估程序）**——Generator **看不到**自己的评分，直到评估器报告结果。
+
+**第 3 步 · 构建循环**：
+```bash
+#!/bin/bash
+# 最小可运行的自我修复 Loop
+MAX_ATTEMPTS=5; attempt=1
+while [ $attempt -le $MAX_ATTEMPTS ]; do
+    scrapy crawl my_spider -o output.json          # 1. 执行爬虫
+    python evaluate.py output.json > eval_report.json  # 2. 独立评估
+    if jq -e '.passed == true' eval_report.json > /dev/null; then
+        echo "✅ 质量达标！"; break
+    fi
+    cat eval_report.json | claude-code --goal "Fix the spider based on this report"  # 4. 不达标→喂报告修爬虫
+    attempt=$((attempt + 1))
+done
+```
+> **效果**：模拟网站改版（重命名所有 CSS class、重组结构）后，字段填充率瞬间归零；Loop 立即触发，Claude 读新页面 HTML 把旧选择器映射到新等价物——**第一次尝试即达成修复目标**。一个关键细节：修复 Agent 试图验证自己的修复时被**拒绝**——独立 Rubric 重新运行在外部循环里，是判定的**唯一裁判**。
+
+### 案例 C · opencode-loop 自我修正开发循环（测试 8 → 23）
+
+**设计要点**：
+- Goal：为某功能模块写完整实现，测试覆盖率不低于当前水平；
+- Writer Agent + Reviewer Agent + Test Runner 三者分离；
+- **Verifier 独立于 Writer 运行**；每次修改后自动跑完整测试套件；
+- 设 **Checkpoint**：每轮迭代保存一次状态，防无限循环丢失进展。
+
+> **结果**：约十几分钟后，**测试从 8 个变成 23 个，全部通过**。关键发现——不是 AI 变强了，而是 **Verifier + Checkpoint 的设计**让 Agent 在安全边界内反复试错，每次失败都转化为改进。
+
+### 三案例共性（一句话提炼）
+
+| 共性 | 体现 |
+|---|---|
+| Goal 可程序检验 | 测试全绿 / 覆盖率 / rubric 通过率 |
+| Maker ≠ Checker | 写代码与审代码是两个 Agent，审的可用便宜模型 |
+| 独立评估是唯一裁判 | 生成器不能给自己的产出打分 |
+| 隔离 + 可恢复 | `git worktree` 并行；Checkpoint 每轮落地 |
+| 人做闸门 | 人审 PR / 处理 Triage，不坐进循环里 |
+
 ## 小测验
 
 ::: details 点击展开题目与答案
@@ -140,6 +231,10 @@ A. "让代码更好"　B. "npm test 全绿且 tsc --noEmit 无报错"　C. "尽�
 **Q3（选择）**：三刹车不包括以下哪项？  
 A. 迭代上限　B. 成本上限　C. 提高模型温度　D. 无进展检测  
 ✅ C。
+
+**Q4（选择）**：夜间自动修 Bug 案例里，多个任务如何并行而不互相干扰？  
+A. 同一个工作目录排队　B. `git worktree` 各建独立工作目录　C. 关掉测试  
+✅ B。
 :::
 
-> 上一节：[04 loop 总入口](/concepts/loop) ｜ 下一节：[4-2 常见坑 + 自检](/concepts/loop/pitfalls)
+> 上一节：[04 loop 总入口](/concepts/loop) ｜ 下一节：[4-2 设计决策 + 验证](/concepts/loop/design)

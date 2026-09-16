@@ -4,6 +4,8 @@ title: 03 harness engineering
 
 # 03 · harness engineering
 
+> **难度**：3-1 机制（入门→熟悉） · 3-2 设计决策（熟悉→精通） · 3-3 坑与自检（全档复核）
+
 主轴第三节：模型与上下文都有了，还需要一个**外壳**把它们装起来、管起来——这就是 harness：**承载 agent 的运行时**（工具、权限、执行环境、约束）。
 
 ::: tip 类比
@@ -32,8 +34,8 @@ flowchart LR
 | 子页 | 内容 | 对应工程动作 |
 |---|---|---|
 | [📐 3-1 机制详解](/concepts/harness/mechanism) | AGENTS.md 样例、权限 allow/deny 矩阵、机械化执行门禁脚本、fail-closed 示例、熵管理 | 设计 + 实现 |
-| [⚠️ 3-2 常见坑 + 自检](/concepts/harness/pitfalls) | 权限过宽、靠模型自觉、缺机械化守护、熵失控等坑 + **产物化三档**（精通=交 AGENTS.md+权限表+验证门禁） | 验证 + 自检 |
-| [🧭 3-3 设计决策 + 验证](/concepts/harness/design) | **地图式 AGENTS.md**（~100 行反示范）、**agent 自纠门禁闭环**、熵扫描+质量评分、**吞吐量合并决策表**、gate 验收 | 设计 + 验证 |
+| [🧭 3-2 设计决策 + 验证](/concepts/harness/design) | **地图式 AGENTS.md**（~100 行反示范）、**agent 自纠门禁闭环**、熵扫描+质量评分、**吞吐量合并决策表**、gate 验收 | 设计 + 验证 |
+| [⚠️ 3-3 常见坑 + 自检](/concepts/harness/pitfalls) | 权限过宽、靠模型自觉、缺机械化守护、熵失控等坑 + **产物化三档**（精通=交 AGENTS.md+权限表+验证门禁） | 自检 |
 
 ::: info 承接关系
 02 产出"受预算约束的上下文"。03 承接它：**AGENTS.md 等规则文件由 harness 管理、由 context 注入**。同时 03 接住 01 `think-tools-test` 埋的落点——"用验证守护不变量"正是 harness 的**机械化执行**思想。

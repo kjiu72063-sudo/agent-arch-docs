@@ -1,12 +1,12 @@
 ---
-title: 4-3 loop 设计决策与验证
+title: 4-2 loop 设计决策与验证
 ---
 
-# 4-3 · loop 设计决策与验证
+# 4-2 · loop 设计决策与验证
 
 4-1 给了五零件 + 三刹车，本节把深度推到**设计者级**：Open/Closed 怎么选、Maker-Checker 分离怎么做成实战、以及 Ralph 循环如何把 harness 与 loop 串成一套生产范式。
 
-::: tip 承接 4-1 / 4-2
+::: tip 承接 4-1
 4-1 有 Goal 布尔判定 / Trigger 四类 / 反馈式 Prompter / Verifier 独立 / 三刹车脚本。本节回答"**什么时候用哪种 loop 形态**"并给两个实战闭环 + 验收 gate。
 :::
 
@@ -120,11 +120,11 @@ def run_loop(step_fn, goal_fn, max_iter=10, max_cost=5.0, no_progress=3):
 ```
 > 运行输出：`PASS: loop gate 5/5（确定性控制流；不验证 LLM 质量）`
 
-## 三档自检（4-3 版）
+## 三档自检（4-2 版）
 
 | 档位 | 必须提交的产物 |
 |---|---|
 | 熟悉 | 能说出 Open/Closed 何时选哪个，解释 Maker/Checker 分离为何必要 |
 | 精通 | 实现一个 Open/Closed 可切换、Maker/Checker 分离、带三刹车的循环，并给出选型论证 |
 
-> 上一节：[4-2 常见坑 + 自检](/concepts/loop/pitfalls) ｜ 下一章：[05 graph engineering](/concepts/graph)
+> 上一节：[4-1 loop 机制详解](/concepts/loop/mechanism) ｜ 下一节：[4-3 常见坑 + 自检](/concepts/loop/pitfalls)

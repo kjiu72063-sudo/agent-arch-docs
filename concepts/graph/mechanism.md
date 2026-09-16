@@ -112,4 +112,4 @@ A. 加速推理　B. 保存 state 快照以支持断点续跑/回放　C. 压缩
 ✅ B。
 :::
 
-> 上一节：[05 graph 总入口](/concepts/graph) ｜ 下一节：[5-2 常见坑 + 自检](/concepts/graph/pitfalls)
+> 上一节：[05 graph 总入口](/concepts/graph) ｜ 下一节：[5-2 设计决策 + 验证](/concepts/graph/design)

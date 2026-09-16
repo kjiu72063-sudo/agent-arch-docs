@@ -1,12 +1,12 @@
 ---
-title: 6-3 skill 设计决策与验证
+title: 6-2 skill 设计决策与验证
 ---
 
-# 6-3 · skill 体系设计决策与验证
+# 6-2 · skill 体系设计决策与验证
 
 6-1 给了 SKILL.md 结构、四层架构、discovery/注入、装饰器，本节把深度推到**设计者级**——基于腾讯云《Skills 最佳实践》的真实规范，回答"一个可交付、可复用、可工程化的 skill 长什么样、怎么管生命周期、怎么写三模式与并发/缓存"。
 
-::: tip 承接 6-1 / 6-2
+::: tip 承接 6-1
 6-1 有最小 SKILL.md / 目录 / discovery-injection / 边界 / 版本评审。本节是它们的**接口与工程规范层**：统一接口、六阶段生命周期、业务化三模式、并发/缓存/资源。
 :::
 
@@ -136,11 +136,11 @@ def decorator_adds_logging_without_changing():
 
 **fixture 即范例**：`fixtures/code-review-agent.md` 是可直接抄用的 SKILL.md 模板（含 frontmatter 接口、执行步骤、输出格式、边界、失败处理）。
 
-## 三档自检（6-3 版）
+## 三档自检（6-2 版）
 
 | 档位 | 必须提交的产物 |
 |---|---|
 | 熟悉 | 用统一接口定义一个 skill，能说明六阶段生命周期与三模式适用 |
 | 精通 | 交付一个含统一接口 + 生命周期 + 组合/策略/装饰器 + 并发/缓存/资源的可复用 skill |
 
-> 上一节：[6-2 常见坑 + 自检](/concepts/skill/pitfalls) ｜ 进入实例：见 [Track B · 框架实例专项](/instances/hermes)
+> 上一节：[6-1 skill 机制详解](/concepts/skill/mechanism) ｜ 下一节：[6-3 常见坑 + 自检](/concepts/skill/pitfalls)

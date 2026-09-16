@@ -1,8 +1,8 @@
 ---
-title: 6-2 skill 常见坑 + 自检
+title: 6-3 skill 常见坑 + 自检
 ---
 
-# 6-2 · skill 常见坑 + 掌握自检
+# 6-3 · skill 常见坑 + 掌握自检
 
 skill 体系最容易在"全量注入 / skill 写太薄 / 无版本评审"上翻车。本节给四个常见坑 + 产物化三档。
 
@@ -29,4 +29,4 @@ skill 体系最容易在"全量注入 / skill 写太薄 / 无版本评审"上翻
 到这里概念主轴（01–06）讲完了。接下来在 [Track B · 框架实例专项](/instances/hermes) 里，看 Hermes / DeepAgent / Claude Code / DeepSeek Harness 等真实框架，分别怎么实现这套 harness / loop / graph / skill。
 :::
 
-> 上一节：[6-1 skill 机制详解](/concepts/skill/mechanism) ｜ 进入实例：见 [Track B · 框架实例专项](/instances/hermes)
+> 上一节：[6-2 skill 设计决策 + 验证](/concepts/skill/design) ｜ 进入实例：见 [Track B · 框架实例专项](/instances/hermes)

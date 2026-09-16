@@ -106,4 +106,4 @@ A. 后端不可用就降级裸跑　B. 拿不到可用后端就失败，绝不�
 ✅ B。
 :::
 
-> 上一节：[03 harness 总入口](/concepts/harness) ｜ 下一节：[3-2 常见坑 + 自检](/concepts/harness/pitfalls)
+> 上一节：[03 harness 总入口](/concepts/harness) ｜ 下一节：[3-2 设计决策 + 验证](/concepts/harness/design)

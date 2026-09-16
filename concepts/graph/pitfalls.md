@@ -1,8 +1,8 @@
 ---
-title: 5-2 graph 常见坑 + 自检
+title: 5-3 graph 常见坑 + 自检
 ---
 
-# 5-2 · graph 常见坑 + 掌握自检
+# 5-3 · graph 常见坑 + 掌握自检
 
 graph 最容易在"滥用图 / reducer 理解错 / 缺 checkpoint"上翻车。本节给四个常见坑 + 产物化三档。
 
@@ -29,4 +29,4 @@ graph 最容易在"滥用图 / reducer 理解错 / 缺 checkpoint"上翻车。�
 图的节点可以是一个 loop，loop 里可以调用一个"能力单元"。这种可复用、按需注入的能力，就是横切主轴的 [06 skill 体系架构](/concepts/skill)。
 :::
 
-> 上一节：[5-1 graph 机制详解](/concepts/graph/mechanism) ｜ 下一章：[06 skill 体系架构](/concepts/skill)
+> 上一节：[5-2 graph 设计决策 + 验证](/concepts/graph/design) ｜ 下一章：[06 skill 体系架构](/concepts/skill)

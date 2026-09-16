@@ -1,12 +1,12 @@
 ---
-title: 3-3 harness 设计决策与验证
+title: 3-2 harness 设计决策与验证
 ---
 
-# 3-3 · harness 设计决策与验证
+# 3-2 · harness 设计决策与验证
 
 3-1 给了机制与可运行门禁，本节把深度推到**设计者级**——基于 deusyu/harness-engineering 与 OpenAI《Harness Engineering》的真实结论，回答"harness 到底怎么搭、怎么让少数人扛起高吞吐"。
 
-::: tip 承接 3-1 / 3-2
+::: tip 承接 3-1
 3-1 有 AGENTS.md/权限/门禁/fail-closed，3-2 讲坑。本节是它们的**方法论层**：目录式 AGENTS.md 怎么设计、门禁怎么让 agent 自纠、熵怎么扫、吞吐量下怎么决定重跑还是等人。
 :::
 
@@ -128,11 +128,11 @@ def sandbox_is_fail_closed():
 
 ** fixtures 即范例**：`fixtures/AGENTS.md` 与 `fixtures/permissions.json` 本身就是可直接抄用的 harness 配置模板。
 
-## 三档自检（3-3 版）
+## 三档自检（3-2 版）
 
 | 档位 | 必须提交的产物 |
 |---|---|
 | 熟悉 | 把 AGENTS.md 写成目录式（≤~120 行 + 深层指针），门禁输出含修复指令 |
 | 精通 | 为一个 3–7 人 agent 团队搭 harness：地图式 AGENTS + 自纠门禁 + 熵扫描 + 吞吐量合并策略 |
 
-> 上一节：[3-2 常见坑 + 自检](/concepts/harness/pitfalls) ｜ 下一章：[04 loop engineering](/concepts/loop)
+> 上一节：[3-1 harness 机制详解](/concepts/harness/mechanism) ｜ 下一节：[3-3 常见坑 + 自检](/concepts/harness/pitfalls)

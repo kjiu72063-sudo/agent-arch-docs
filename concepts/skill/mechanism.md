@@ -116,4 +116,4 @@ A. 分成两层　B. 不改原 skill 而叠加前置/后置横切逻辑　C. 加
 ✅ B。
 :::
 
-> 上一节：[06 skill 总入口](/concepts/skill) ｜ 下一节：[6-2 常见坑 + 自检](/concepts/skill/pitfalls)
+> 上一节：[06 skill 总入口](/concepts/skill) ｜ 下一节：[6-2 设计决策 + 验证](/concepts/skill/design)

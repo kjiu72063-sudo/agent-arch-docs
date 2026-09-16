@@ -1,12 +1,12 @@
 ---
-title: 5-3 graph 设计决策与验证
+title: 5-2 graph 设计决策与验证
 ---
 
-# 5-3 · graph 设计决策与验证
+# 5-2 · graph 设计决策与验证
 
 5-1 让你能跑通 StateGraph，本节把深度推到**设计者级**：什么时候用哪种 reducer、生产用哪种 checkpointer、HITL 该用静态还是动态 interrupt、怎么用 Send 做并行归并，以及怎样用一个 gate 脚本验收整张图。
 
-::: tip 承接 5-1 / 5-2
+::: tip 承接 5-1
 5-1 给了可运行 StateGraph（条件边 + `operator.add` reducer + compile + checkpoint）。本节在其上回答"**何时选哪个**"并给**可运行验收 gate**。
 :::
 
@@ -110,7 +110,7 @@ builder.add_conditional_edges("dispatcher", fan_out, ["worker"])
 builder.add_edge("worker", "collect")
 ```
 
-**决策表：何时用图 + 哪种**（承接 5-2 的"别滥用图"）：
+**决策表：何时用图 + 哪种**（承接 [5-3 常见坑](/concepts/graph/pitfalls) 的"别滥用图"）：
 | 场景 | 方案 |
 |---|---|
 | 单线性反复 | 单 loop（04），不上图 |
@@ -141,11 +141,11 @@ def run():
 ```
 > 运行：`python gate/graph_gate.py`（需 `pip install langgraph`）。这一步把"会用"变成"可验证会了"。
 
-## 三档自检（5-3 版）
+## 三档自检（5-2 版）
 
 | 档位 | 必须提交的产物 |
 |---|---|
 | 熟悉 | 能解释 reducer 三类语义，并指出 `operator.add` 在并行下为何安全 |
 | 精通 | 实现一个**可中断 + 可续跑（checkpoint）+ Send 并行归并**的生产图，并说出该用哪种 checkpointer 与 interrupt |
 
-> 上一节：[5-2 常见坑 + 自检](/concepts/graph/pitfalls) ｜ 下一章：[06 skill 体系架构](/concepts/skill)
+> 上一节：[5-1 graph 机制详解](/concepts/graph/mechanism) ｜ 下一节：[5-3 常见坑 + 自检](/concepts/graph/pitfalls)

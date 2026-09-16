@@ -73,28 +73,28 @@ export default withMermaid({
           },
           { text: '02 context engineering', link: '/concepts/context', items: [
             { text: '2-1 机制详解', link: '/concepts/context/mechanism' },
-            { text: '2-2 常见坑 + 自检', link: '/concepts/context/pitfalls' },
-            { text: '2-3 设计决策 + 验证', link: '/concepts/context/design' },
+            { text: '2-2 设计决策 + 验证', link: '/concepts/context/design' },
+            { text: '2-3 常见坑 + 自检', link: '/concepts/context/pitfalls' },
           ]},
           { text: '03 harness engineering', link: '/concepts/harness', items: [
             { text: '3-1 机制详解', link: '/concepts/harness/mechanism' },
-            { text: '3-2 常见坑 + 自检', link: '/concepts/harness/pitfalls' },
-            { text: '3-3 设计决策 + 验证', link: '/concepts/harness/design' },
+            { text: '3-2 设计决策 + 验证', link: '/concepts/harness/design' },
+            { text: '3-3 常见坑 + 自检', link: '/concepts/harness/pitfalls' },
           ]},
           { text: '04 loop engineering', link: '/concepts/loop', items: [
             { text: '4-1 机制详解', link: '/concepts/loop/mechanism' },
-            { text: '4-2 常见坑 + 自检', link: '/concepts/loop/pitfalls' },
-            { text: '4-3 设计决策 + 验证', link: '/concepts/loop/design' },
+            { text: '4-2 设计决策 + 验证', link: '/concepts/loop/design' },
+            { text: '4-3 常见坑 + 自检', link: '/concepts/loop/pitfalls' },
           ]},
           { text: '05 graph engineering', link: '/concepts/graph', items: [
             { text: '5-1 机制详解', link: '/concepts/graph/mechanism' },
-            { text: '5-2 常见坑 + 自检', link: '/concepts/graph/pitfalls' },
-            { text: '5-3 设计决策 + 验证', link: '/concepts/graph/design' },
+            { text: '5-2 设计决策 + 验证', link: '/concepts/graph/design' },
+            { text: '5-3 常见坑 + 自检', link: '/concepts/graph/pitfalls' },
           ]},
           { text: '06 skill 体系架构', link: '/concepts/skill', items: [
             { text: '6-1 机制详解', link: '/concepts/skill/mechanism' },
-            { text: '6-2 常见坑 + 自检', link: '/concepts/skill/pitfalls' },
-            { text: '6-3 设计决策 + 验证', link: '/concepts/skill/design' },
+            { text: '6-2 设计决策 + 验证', link: '/concepts/skill/design' },
+            { text: '6-3 常见坑 + 自检', link: '/concepts/skill/pitfalls' },
           ]},
         ],
       },
@@ -139,7 +139,7 @@ export default withMermaid({
     lastUpdatedText: '最后更新',
 
     footer: {
-      message: 'Agent 架构知识体系 · v0.6 设计者级深化',
+      message: 'Agent 架构知识体系 · v0.7 顺序·难度·内容量·定位',
       copyright: '图多字少 · 关系图即导航',
     },
   },
