@@ -4,6 +4,12 @@ title: 2-1 context 机制详解
 
 # 2-1 · context engineering 机制详解
 
+::: info 难度分层 · 本页 = L0→L1「机制层」
+**读到哪算够**：L0 只需看懂每节开头与关系图；L1 需要把本页读完，并跑通 [本页 gate](/concepts/context/gate/context_gate)。
+本页**不含** L2 的选型与取舍——那些放在 [下一步「设计决策」](/concepts/context/design)。
+:::
+
+
 本章把 02 的"预算观"落地成**可实现的机制**，并给一段可运行的最小预算控制骨架。读完你不仅能"说清"，还能"写出来"。
 
 ::: tip 承接 01

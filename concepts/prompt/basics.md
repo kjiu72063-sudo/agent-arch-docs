@@ -4,6 +4,11 @@ title: 1-2 system prompt 机制
 
 # 1-2 · system prompt 是如何决定 agent 行为的
 
+::: info 难度分层 · 本页 = L0→L1（prompt 基础层）
+L0 看懂概念与类比；L1 能照本页示例手写出可用 prompt。读完 1-1 ~ 1-7 即达成 Track A 的 L1 基线。
+:::
+
+
 system prompt 是"**常驻说明书**"，与每轮对话的临时内容分离；它决定 agent 的**人设、能力边界、纪律**。
 
 ## 一次请求里装了什么

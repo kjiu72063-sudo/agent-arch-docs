@@ -4,6 +4,12 @@ title: 3-1 harness 机制详解
 
 # 3-1 · harness engineering 机制详解
 
+::: info 难度分层 · 本页 = L0→L1「机制层」
+**读到哪算够**：L0 只需看懂每节开头与关系图；L1 需要把本页读完，并跑通 [本页 gate](/concepts/harness/gate/harness_gate)。
+本页**不含** L2 的选型与取舍——那些放在 [下一步「设计决策」](/concepts/harness/design)。
+:::
+
+
 把 03 的"外壳"概念落地成**可实现的机制**：一个真实 `AGENTS.md`、一张权限矩阵、一段机械化执行门禁脚本、一个 fail-closed 示例。读完能"搭出来"，而不只是"说得出"。
 
 ::: tip 承接 02

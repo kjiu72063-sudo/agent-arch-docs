@@ -4,6 +4,12 @@ title: 4-1 loop 机制详解
 
 # 4-1 · loop engineering 机制详解
 
+::: info 难度分层 · 本页 = L0→L1「机制层」
+**读到哪算够**：L0 只需看懂每节开头与关系图；L1 需要把本页读完，并跑通 [本页 gate](/concepts/loop/gate/loop_gate)。
+本页**不含** L2 的选型与取舍——那些放在 [下一步「设计决策」](/concepts/loop/design)。
+:::
+
+
 把 04 的"五零件"落地成**可实现的机制**：Goal 怎么可程序检验、Trigger 有哪四类、Prompter 如何反馈式重组、为什么 Generator/Verifier 必须分离、三刹车怎么写成脚本。读完能"写出来"。
 
 ::: tip 承接 01

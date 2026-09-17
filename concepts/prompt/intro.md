@@ -4,6 +4,11 @@ title: 1-1 prompt engineering 入门
 
 # 1-1 · prompt engineering 入门
 
+::: info 难度分层 · 本页 = L0→L1（prompt 基础层）
+L0 看懂概念与类比；L1 能照本页示例手写出可用 prompt。读完 1-1 ~ 1-7 即达成 Track A 的 L1 基线。
+:::
+
+
 prompt engineering 就是"**设计给模型的指令，让它按你的意图稳定地干活**"。它是一切 agent 工程的基座。
 
 ::: tip 先打个比方

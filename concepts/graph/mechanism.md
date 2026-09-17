@@ -4,6 +4,12 @@ title: 5-1 graph 机制详解
 
 # 5-1 · graph engineering 机制详解
 
+::: info 难度分层 · 本页 = L0→L1「机制层」
+**读到哪算够**：L0 只需看懂每节开头与关系图；L1 需要把本页读完，并跑通 [本页 gate](/concepts/graph/gate/graph_gate)。
+本页**不含** L2 的选型与取舍——那些放在 [下一步「设计决策」](/concepts/graph/design)。
+:::
+
+
 把 05 的"图编排"落地成**真正可运行的 LangGraph 代码**。读完你不仅能画图，还能跑通一个含条件边、reducer、compile 的 StateGraph。
 
 ::: tip 承接 04

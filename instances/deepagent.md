@@ -10,7 +10,7 @@ Track B 第二个实例：**LangChain `deepagents`**——基于 LangGraph + 中
 DeepAgent 证明"图编排"不只是概念：用 LangGraph 的状态图把**规划、子 agent、上下文总结**串起来，复杂 agent 也能声明式建出来。
 :::
 
-## 实例 × 工程层映射
+## 精确映射：本实例 × 主轴机制
 
 DeepAgent 最凸显的工程层是 **graph + loop**：
 
@@ -25,12 +25,13 @@ flowchart LR
   style L fill:#0d7d6e,color:#fff
 ```
 
-| 主轴层 | DeepAgent 里的落地 |
-|---|---|
-| loop | 推理循环、工具往返 |
-| graph | LangGraph 状态图、多节点编排 |
-| context | 上下文自动总结（防膨胀） |
-| tool | 文件系统工具、子 agent 作为工具 |
+| 本实例的具体件 | 对应主轴机制 | 章节 |
+|---|---|---|
+| `ContextSummarizationMiddleware(max_messages=30)` | compaction（超阈值压缩，防窗口膨胀） | [2-2](/concepts/context/design) |
+| `subagents=[SubAgent(...)]` 包装成工具 | 子 agent 作为节点 / 工具 | [5-2](/concepts/graph/design) |
+| `messages` / `intermediate_steps` 的 reducer | graph reducer（`add_messages` / `operator.add`） | [5-1](/concepts/graph/mechanism) |
+| 推理循环 + 工具往返 | loop 五零件 | [4-1](/concepts/loop/mechanism) |
+| 三 toolkit（fs / bash / interpreter） | 工具能力 + 沙箱执行 | [3-1](/concepts/harness/mechanism) |
 
 ## 中间件时序：一次带规划的执行
 

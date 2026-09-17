@@ -4,6 +4,12 @@ title: 6-2 skill 设计决策与验证
 
 # 6-2 · skill 体系设计决策与验证
 
+::: info 难度分层 · 本页 = L2「设计层」
+**前置**：请先掌握 [L1 机制详解](/concepts/skill/mechanism)。
+本页是 L2——讲**选型 / 权衡 / 取舍**，并附可直接运行的 [gate 验收](/concepts/skill/gate/skill_gate)。
+:::
+
+
 6-1 给了 SKILL.md 结构、四层架构、discovery/注入、装饰器，本节把深度推到**设计者级**——基于腾讯云《Skills 最佳实践》的真实规范，回答"一个可交付、可复用、可工程化的 skill 长什么样、怎么管生命周期、怎么写三模式与并发/缓存"。
 
 ::: tip 承接 6-1

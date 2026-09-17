@@ -4,6 +4,12 @@ title: 5-2 graph 设计决策与验证
 
 # 5-2 · graph 设计决策与验证
 
+::: info 难度分层 · 本页 = L2「设计层」
+**前置**：请先掌握 [L1 机制详解](/concepts/graph/mechanism)。
+本页是 L2——讲**选型 / 权衡 / 取舍**，并附可直接运行的 [gate 验收](/concepts/graph/gate/graph_gate)。
+:::
+
+
 5-1 让你能跑通 StateGraph，本节把深度推到**设计者级**：什么时候用哪种 reducer、生产用哪种 checkpointer、HITL 该用静态还是动态 interrupt、怎么用 Send 做并行归并，以及怎样用一个 gate 脚本验收整张图。
 
 ::: tip 承接 5-1

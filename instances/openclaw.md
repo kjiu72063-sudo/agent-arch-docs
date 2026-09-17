@@ -10,7 +10,7 @@ Track B 第三个实例：**自托管多通道 AI 助手平台**（前身 ClawdB
 OpenClaw 是 harness 的极致示范：模型不是被写死在某一个聊天框里，而是通过 **Gateway 这座"中央车站"**，同时服务微信、Telegram…… 多个通道，共享同一套工具与插件。
 :::
 
-## 实例 × 工程层映射
+## 精确映射：本实例 × 主轴机制
 
 OpenClaw 最凸显的工程层是 **harness**：
 
@@ -25,12 +25,13 @@ flowchart LR
   style GW fill:#0d7d6e,color:#fff
 ```
 
-| 主轴层 | OpenClaw 里的落地 |
-|---|---|
-| harness | Gateway 外壳、多通道会话 |
-| context | 多通道会话存储与恢复 |
-| skill/插件 | 插件体系（能力扩展） |
-| tool | 工具集成 |
+| 本实例的具体件 | 对应主轴机制 | 章节 |
+|---|---|---|
+| Gateway 多通道连接器 | harness 外壳（核心与通道解耦） | [3-1](/concepts/harness/mechanism) |
+| `sessionKey`（如 `my-channel:{chatId}`） | 多通道会话隔离（会话存储与恢复） | [2-2](/concepts/context/design) |
+| `ChannelConnector` 统一接口 | 能力外挂（新增通道不改核心） | [06](/concepts/skill) |
+| 插件 `setup` / `teardown` | 注册即副作用、卸载即撤销 | [06](/concepts/skill) |
+| 工具集成（`registerTool`） | 工具调用（tool use） | [1-5](/concepts/prompt/think-tools-test) |
 
 ## Gateway 架构：一个核心，多通道
 

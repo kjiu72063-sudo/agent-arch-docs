@@ -10,7 +10,7 @@ Track B 第六个实例：**deepseek-ai 的插件化 Agent Harness**（基于 Co
 DeepSeek Harness 告诉你 harness 可以"长满插件"：连上下文、服务、事件、副作用都插件化。改能力不是改核心，而是**插一个插件**。
 :::
 
-## 实例 × 工程层映射
+## 精确映射：本实例 × 主轴机制
 
 DeepSeek Harness 最凸显的工程层是 **harness + loop**：
 
@@ -23,12 +23,13 @@ flowchart LR
   style L fill:#0d7d6e,color:#fff
 ```
 
-| 主轴层 | DeepSeek Harness 里的落地 |
-|---|---|
-| context | Cordis Context / Service / Event / Effect |
-| harness | 一切皆插件、Seam/Profile/Bundle/Patch |
-| loop | ReactLoopAgent |
-| skill | 工具族 |
+| 本实例的具体件 | 对应主轴机制 | 章节 |
+|---|---|---|
+| `session` 事件溯源 + `deriveMessages` 投影 | 可审计压缩（append-only + `surfaceOp=replace`） | [2-2](/concepts/context/design) |
+| `spill` 超大结果 → locator | 预算控制 / spill（存全文、注入预览） | [2-1](/concepts/context/mechanism) |
+| `tools/pre-execute` 审批与 guard 拒绝 | 权限矩阵（工具执行前把关） | [3-1](/concepts/harness/mechanism) |
+| `ReactLoopAgent` 的 turn / step | loop 最小执行单元（step=一次模型请求+其工具） | [4-1](/concepts/loop/mechanism) |
+| Cordis 插件（Context/Service/Event/Effect） | 能力扩展（一切皆插件） | [06](/concepts/skill) |
 
 ## 插件树 / Cordis 结构
 

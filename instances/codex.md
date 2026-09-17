@@ -10,7 +10,7 @@ Track B 第五个实例：**OpenAI 的本地软件工程 agent**（Rust 核心�
 Codex 是"软件工程型 agent"的标杆：它不光会聊天，还能在一个**受控沙箱**里读仓库、改代码、跑验证——用 AGENTS.md 定规则、skills 扩能力、MCP 接服务。
 :::
 
-## 实例 × 工程层映射
+## 精确映射：本实例 × 主轴机制
 
 Codex 最凸显的工程层是 **harness + loop**：
 
@@ -24,13 +24,14 @@ flowchart LR
   style L fill:#0d7d6e,color:#fff
 ```
 
-| 主轴层 | Codex 里的落地 |
-|---|---|
-| context | AGENTS.md 常驻注入 |
-| harness | sandbox 沙箱、命令执行 |
-| loop | 软件工程执行循环 |
-| skill | skills 能力扩展 |
-| （跨层） | MCP |
+| 本实例的具体件 | 对应主轴机制 | 章节 |
+|---|---|---|
+| `AGENTS.md` | 常驻规则 + 目录指针（渐进披露） | [2-1](/concepts/context/mechanism) |
+| `config.toml` `sandbox_mode` | 权限取舍（read-only→workspace-write→full） | [3-2](/concepts/harness/design) |
+| `network_access=false` + `inherit="core"` | fail-closed + 环境变量隔离 | [3-1](/concepts/harness/mechanism) |
+| `approval_policy="on-request"` | 审批粒度（部分操作需许可） | [3-1](/concepts/harness/mechanism) |
+| 执行循环（读码→沙箱改→验证→重试） | loop 三刹车 + 反馈重试 | [4-1](/concepts/loop/mechanism) |
+| skills / MCP | 能力扩展（横切） | [06](/concepts/skill) |
 
 ## 执行循环：改代码不是一次动作，是一个 loop
 

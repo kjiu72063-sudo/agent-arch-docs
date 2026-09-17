@@ -10,7 +10,7 @@ Track B 第一个实例：**NousResearch 开源 Python agent 框架**（注意�
 Hermes 是一个**可运行的 Python agent 框架**，把"对话循环、工具注册表、技能系统、记忆、MCP"这些零件都实现了——你改的不是模型，而是**承载它的 harness 与 loop**。
 :::
 
-## 实例 × 工程层映射
+## 精确映射：本实例 × 主轴机制
 
 Hermes 最凸显的工程层是 **harness + loop**：
 
@@ -25,13 +25,13 @@ flowchart LR
   style L fill:#0d7d6e,color:#fff
 ```
 
-| 主轴层 | Hermes 里的落地 |
-|---|---|
-| context | 上下文管理、记忆读写 |
-| harness | 工具注册表、执行环境 |
-| loop | 对话循环（思考→工具→结果） |
-| skill | 技能系统 |
-| （跨层） | MCP、Gateway 集成 |
+| 本实例的具体件 | 对应主轴机制 | 章节 |
+|---|---|---|
+| `@tool_registry.register(..., permission=...)` | 权限矩阵（登记 → 参数校验 → 权限拦截） | [3-1](/concepts/harness/mechanism) |
+| 对话循环（`llm.chat` → `registry.invoke` → 回填） | loop 五零件（Prompter/Agent/工具/Verifier） | [4-1](/concepts/loop/mechanism) |
+| System Prompt 工程模块 | prompt 分层拼装（人设/工具/纪律分段） | [1-2](/concepts/prompt/basics) |
+| 上下文管理与记忆读写 | 记忆分层（工作记忆 / 长期） | [2-1](/concepts/context/mechanism) |
+| 技能系统 / MCP / Gateway | 能力扩展（横切） | [06](/concepts/skill) |
 
 ## 组成框图：Hermes 的核心模块
 

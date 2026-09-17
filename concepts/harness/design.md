@@ -4,6 +4,12 @@ title: 3-2 harness 设计决策与验证
 
 # 3-2 · harness 设计决策与验证
 
+::: info 难度分层 · 本页 = L2「设计层」
+**前置**：请先掌握 [L1 机制详解](/concepts/harness/mechanism)。
+本页是 L2——讲**选型 / 权衡 / 取舍**，并附可直接运行的 [gate 验收](/concepts/harness/gate/harness_gate)。
+:::
+
+
 3-1 给了机制与可运行门禁，本节把深度推到**设计者级**——基于 deusyu/harness-engineering 与 OpenAI《Harness Engineering》的真实结论，回答"harness 到底怎么搭、怎么让少数人扛起高吞吐"。
 
 ::: tip 承接 3-1

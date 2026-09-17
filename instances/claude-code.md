@@ -10,7 +10,7 @@ Track B 第四个实例：**Anthropic 的 CLI agent**。工程上极有代表性
 Claude Code 是把 harness 的"权限"做到六层级的代表：从"随便问"到"自动执行"再到"完全手控"，每一层都决定工具能否真的动手、改文件、跑命令。
 :::
 
-## 实例 × 工程层映射
+## 精确映射：本实例 × 主轴机制
 
 Claude Code 最凸显的工程层是 **harness + loop**：
 
@@ -24,13 +24,15 @@ flowchart LR
   style L fill:#0d7d6e,color:#fff
 ```
 
-| 主轴层 | Claude Code 里的落地 |
-|---|---|
-| context | 会话压缩、CLAUDE.md 注入 |
-| harness | 六层权限、工具管线、hook |
-| loop | 对话-执行循环 |
-| skill | 技能（Skill） |
-| （跨层） | MCP、CLAUDE.md |
+| 本实例的具体件 | 对应主轴机制 | 章节 |
+|---|---|---|
+| `CLAUDE.md` 项目宪法 | 常驻段注入 + 渐进披露（目录指针） | [2-1](/concepts/context/mechanism) |
+| 长会话压缩摘要 | compaction（prune / summarize） | [2-2](/concepts/context/design) |
+| `settings.json` `permissions.allow/deny` | 权限 allow/deny 矩阵 | [3-1](/concepts/harness/mechanism) |
+| `defaultMode` 权限层级 | 权限取舍（越权越危险） | [3-2](/concepts/harness/design) |
+| `PostToolUse` hook 跑 ruff + `exit 2` | 机械化门禁（声明 ≠ 执行） | [3-1](/concepts/harness/mechanism) |
+| 对话-执行循环（读→改→验） | loop 五零件 | [4-1](/concepts/loop/mechanism) |
+| Skill / MCP | 能力扩展（横切） | [06](/concepts/skill) |
 
 ## 六层权限 / 工具管线
 

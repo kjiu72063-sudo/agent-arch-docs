@@ -4,6 +4,12 @@ title: 4-2 loop 设计决策与验证
 
 # 4-2 · loop 设计决策与验证
 
+::: info 难度分层 · 本页 = L2「设计层」
+**前置**：请先掌握 [L1 机制详解](/concepts/loop/mechanism)。
+本页是 L2——讲**选型 / 权衡 / 取舍**，并附可直接运行的 [gate 验收](/concepts/loop/gate/loop_gate)。
+:::
+
+
 4-1 给了五零件 + 三刹车，本节把深度推到**设计者级**：Open/Closed 怎么选、Maker-Checker 分离怎么做成实战、以及 Ralph 循环如何把 harness 与 loop 串成一套生产范式。
 
 ::: tip 承接 4-1

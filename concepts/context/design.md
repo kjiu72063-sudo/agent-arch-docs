@@ -4,6 +4,12 @@ title: 2-2 context 设计决策与验证
 
 # 2-2 · context 设计决策与验证
 
+::: info 难度分层 · 本页 = L2「设计层」
+**前置**：请先掌握 [L1 机制详解](/concepts/context/mechanism)。
+本页是 L2——讲**选型 / 权衡 / 取舍**，并附可直接运行的 [gate 验收](/concepts/context/gate/context_gate)。
+:::
+
+
 2-1 给了预算控制骨架、spill、compaction 双触发，本节把深度推到**设计者级**：compaction 的完整流水线怎么走、prune 与 summarize 什么时候各自出场、DSE 确定性信号提取是什么、真实 tokenizer 计量为何必要、以及如何保持"压缩不丢可审计性"。
 
 ::: tip 承接 2-1
