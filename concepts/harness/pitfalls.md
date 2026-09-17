@@ -138,4 +138,8 @@ harness 把"能做什么、被什么约束"定死之后，agent 需要在里面*
 本页六条踩坑、落地清单、闭环总结均出自教材《Harness Engineering 从入门到精通实战》第 46–48 页（[S11](/practice/sources)）。
 :::
 
+::: tip 生产落地 → Track D
+本页的六条踩坑在**真实项目流程**中的对应治理（含 10 条反模式与"每周环境审查四问"）见 [D8 §18 反模式与踩坑](/process/tooling)。
+:::
+
 > 上一节：[3-2 harness 设计决策 + 验证](/concepts/harness/design) ｜ 下一章：[04 loop engineering](/concepts/loop)

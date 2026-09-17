@@ -126,6 +126,21 @@ export default withMermaid({
           { text: '自研 harness', link: '/practice/build' },
         ],
       },
+      {
+        text: 'Track D · 生产级流程',
+        collapsed: true,
+        items: [
+          { text: 'D0 导读', link: '/process/' },
+          { text: 'D1 第一性原理', link: '/process/principles' },
+          { text: 'D2 控制模型 ★', link: '/process/control-model' },
+          { text: 'D3 生命周期主干', link: '/process/lifecycle' },
+          { text: 'D4 阶段细则（上）S0–S2', link: '/process/stages-1' },
+          { text: 'D5 阶段细则（下）S3–S5', link: '/process/stages-2' },
+          { text: 'D6 贯穿机制', link: '/process/mechanisms' },
+          { text: 'D7 模板库', link: '/process/templates' },
+          { text: 'D8 工具·清单·反模式·附录', link: '/process/tooling' },
+        ],
+      },
     ],
 
     search: {
@@ -145,7 +160,7 @@ export default withMermaid({
     lastUpdatedText: '最后更新',
 
     footer: {
-      message: 'Agent 架构知识体系 · v0.7 顺序·难度·内容量·定位',
+      message: 'Agent 架构知识体系 · v0.8 Track D 生产级流程',
       copyright: '图多字少 · 关系图即导航',
     },
   },

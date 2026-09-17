@@ -346,4 +346,8 @@ def sandbox_is_fail_closed():
 本页三步走、配置样例、三要素公式、口头约定对照表、CI/Worktree 脚本，均出自教材《Harness Engineering 从入门到精通实战》第 14–48 页（[S11](/practice/sources)）。**具体版本号与依赖以你的项目为准**（【建议】）。
 :::
 
+::: tip 生产落地 → Track D
+本页的"三步走"是**内容层面**的落地顺序；**项目层面**的阶段与门禁（S0–S5 + G0–G5）见 [D3 生命周期主干](/process/lifecycle) 与 [D4 阶段细则](/process/stages-1)。
+:::
+
 > 上一节：[3-1 harness 机制详解](/concepts/harness/mechanism) ｜ 下一节：[3-3 常见坑 + 自检](/concepts/harness/pitfalls)

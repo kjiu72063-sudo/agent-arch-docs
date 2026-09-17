@@ -197,4 +197,8 @@ A. 好看　B. 让 Agent 读到即可自纠，无需人类介入　C. 省事
 本页七大组件、失败模式、角色分工、进度文件流程、依赖方向、垃圾回收等，均出自教材《Harness Engineering 从入门到精通实战》第 6–13 页（[S11](/practice/sources)），该教材汇整自 Mitchell Hashimoto、OpenAI、Anthropic、LangChain、Martin Fowler。（【建议】具体实现按项目裁剪。）
 :::
 
+::: tip 生产落地 → Track D
+七大组件在**真实交付流程**里怎么被排进阶段、怎么举证——见 [D6 贯穿机制（环境层）](/process/mechanisms) 与 [D2 控制模型](/process/control-model)。
+:::
+
 > 上一节：[03 harness 总入口](/concepts/harness) ｜ 下一节：[3-2 设计决策 + 验证](/concepts/harness/design)

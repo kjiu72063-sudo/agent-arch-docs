@@ -27,6 +27,7 @@ title: 事实源清单
 | S9 | 腾讯云开发者 · skill 文章 | 技术文章 | [06 skill](/concepts/skill) | 文章 | [cloud.tencent.com/developer/article/2646885](https://cloud.tencent.com/developer/article/2646885) |
 | S10 | LangChain deepagents 实践 | CSDN 博客 | [DeepAgent 实例](/instances/deepagent) | 归纳 | [blog.csdn.net/weixin_44733966/article/details/156938858](https://blog.csdn.net/weixin_44733966/article/details/156938858) |
 | **S11** | **《Harness Engineering 从入门到精通实战》**（用户提供，51 页） | **权威教材** | **[03 harness 全章](/concepts/harness)（主权威源）** | **逐字直读**（本地 PDF 全文抽取，51398 字符） | 本地 PDF；其原始来源见下方「S11 的原始出处」 |
+| **S12** | **《Harness Engineering 生产级项目标准流程》**（项目内部整理，v2.2.1，2266 行） | **流程规范** | **[Track D 全章](/process/)（主权威源）** | **逐字直读**（本地 Markdown，54314 字符） | 项目内部文档；⚠️ **部分机制自述"已声明未生效"**，且**规则验证状态见 [D8 台账](/process/tooling)**（15 条：7 ✅ / 3 ⚠️ / 1 ❌ / 4 ⏳） |
 
 ### S11 的原始出处（该教材汇整自以下一手来源，【事实】）
 

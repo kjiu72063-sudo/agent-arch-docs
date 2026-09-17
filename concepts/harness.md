@@ -111,4 +111,8 @@ Anthropic 工程团队在长时间运行 Agent 中总结的典型翻车姿势（
 本章概念、术语、案例数据与三步走方法均依据教材《Harness Engineering 从入门到精通实战》（【事实】，[S11](/practice/sources)），该教材自身汇整自 Mitchell Hashimoto、OpenAI、Anthropic、LangChain、Martin Fowler 等原始来源。**具体配置项与版本号以你的项目实际情况为准**（【建议】），落地方式见 [3-2 设计决策](/concepts/harness/design)。
 :::
 
+::: tip 生产落地 → Track D
+本章讲的是"**机制是什么**"。如果你要把它用到真实交付里——**怎么排阶段、怎么举证、怎么判定能否放行**——见 [Track D · 生产级流程](/process/)（依据同一教材的生产级 SOP）。
+:::
+
 > 上一章：[02 context engineering](/concepts/context) ｜ 下一章：[04 loop engineering](/concepts/loop)

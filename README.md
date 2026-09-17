@@ -51,6 +51,7 @@
 | **Track A · 概念主轴** | prompt（7 子页） + context / harness / loop / graph / skill（各 `机制·设计决策·坑与自检` 三子页 + gate） |
 | **Track B · 实例专项** | Hermes · DeepAgent · OpenClaw · Claude Code · Codex · DeepSeek Harness |
 | **Track C · 复刻实战** | 统一对比矩阵 · 学习路径 · 掌握自检 · 自研 harness |
+| **Track D · 生产级流程** | 导读 / 第一性原理 / **控制模型** / 生命周期 S0–S5+G0–G5 / 阶段细则 / 贯穿机制 / 模板库 / 工具·清单·反模式·附录（依据项目内 SOP v2.2.1） |
 
 > ℹ️ 主轴顺序 `prompt→context→harness→loop→graph` 为本站结构化假设（【推断】），可自建心智模型，只要前后自洽。
 
