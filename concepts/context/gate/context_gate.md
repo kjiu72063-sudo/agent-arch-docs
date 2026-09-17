@@ -11,7 +11,7 @@ title: context 验收 gate
 python concepts/context/gate/context_gate.py
 ```
 
-## 验证内容（5 项，均真实执行）
+## 验证内容（6 项，均真实执行）
 
 | # | 验证 | 方式 |
 |---|---|---|
@@ -20,14 +20,16 @@ python concepts/context/gate/context_gate.py
 | ③ | DSE 确定性 | 同输入两次同输出 |
 | ④ | 真实 tokenizer vs `split()` 差异 | **真 `tiktoken`** 计数 |
 | ⑤ | 中文 token 成本 | 中文按字计，与空白切分不同 |
+| ⑥ | **DSE 产物可断言** | 抽取实体/意图/约束为结构化字段，逐项 `assert`（对比 LLM 摘要不可断言） |
 
 ## 实测输出（真实 tiktoken）
 
 ```
 split估算=4, 真实tokens=10     ← 空格切分低估 2.5 倍
 中文 24 字 -> 27 tokens
-check1..check5: PASS
-PASS: context gate 5/5（真实 tokenizer 已启用）
+entities=['alice@corp.com'], intent=部署, constraints=3 条
+check1..check6: PASS
+PASS: context gate 6/6（真实 tokenizer 已启用 + DSE 产物可断言）
 ```
 
 > 依赖：`pip install tiktoken`。
@@ -120,6 +122,50 @@ def chinese_token_cost_is_real():
     return n > 0 and n != len(zh.split())
 
 
+# ---- DSE：确定性信号提取（实体/意图/约束），产物可断言 ----
+import re
+
+DSE_ENTITY_RULES = {
+    "emails": re.compile(r"[\w.+-]+@[\w-]+\.[\w.]+"),
+    "urls":   re.compile(r"https?://[^\s)。，、；]+"),
+    "versions": re.compile(r"\b\d+\.\d+\.\d+\b"),
+}
+DSE_INTENT_VERBS = ["部署", "回滚", "查询", "修改", "删除", "重构"]
+DSE_CONSTRAINT_PAT = re.compile(
+    r"(必须[^。;；，\n]*|禁止[^。;；，\n]*|只读|不改[^。;；，\n]*|不超过\s*\d+[^。;；，\n]*|超时\s*\d+\s*秒?)"
+)
+
+
+def dse_extract_rich(text):
+    """确定性提取结构化信号（无 LLM、同输入同输出）。"""
+    entities = {k: sorted(set(p.findall(text))) for k, p in DSE_ENTITY_RULES.items()}
+    entities = {k: v for k, v in entities.items() if v}
+    intent = None
+    for line in text.splitlines():
+        for v in DSE_INTENT_VERBS:                 # 词表顺序固定 → 结果确定
+            if v in line:
+                intent = v
+                break
+        if intent:
+            break
+    return {"entities": entities, "intent": intent,
+            "constraints": DSE_CONSTRAINT_PAT.findall(text)}
+
+
+def dse_fields_are_assertable():
+    """真实验证：DSE 产物是结构化字段，可被 assert 直接断言。"""
+    s = ("用户 alice@corp.com 要求：把 https://svc/api/v1.2.3 部署到 prod，"
+         "必须只读校验，超时 5 秒，不改 config.yaml")
+    out = dse_extract_rich(s)
+    ok = (out["entities"].get("emails") == ["alice@corp.com"]
+          and out["intent"] == "部署"
+          and "必须只读校验" in out["constraints"]
+          and dse_extract_rich(s) == out)
+    print(f"    entities={out['entities'].get('emails')}, intent={out['intent']}, "
+          f"constraints={len(out['constraints'])} 条")
+    return ok
+
+
 def main():
     checks = [
         budget_controller_degrades_ok(),
@@ -127,11 +173,12 @@ def main():
         dse_is_deterministic(),
         tiktoken_differs_from_split(),
         chinese_token_cost_is_real(),
+        dse_fields_are_assertable(),
     ]
     for i, ok in enumerate(checks, 1):
         print(f"check{i}: {'PASS' if ok else 'FAIL'}")
     assert all(checks), "context gate failed"
-    print("PASS: context gate 5/5（真实 tokenizer 已启用）")
+    print("PASS: context gate 6/6（真实 tokenizer 已启用 + DSE 产物可断言）")
 
 
 if __name__ == "__main__":
