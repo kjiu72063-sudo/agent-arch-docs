@@ -103,3 +103,19 @@ body {
 .vp-doc table { display: table; width: 100%; margin: 16px 0; }
 .vp-doc th, .vp-doc td { border: 1px solid var(--vp-c-divider); padding: 8px 12px; }
 .vp-doc th { background: var(--vp-c-bg-alt); }
+
+/* ─── Mermaid：HTML label 末行被节点框裁剪 ───
+   根因（DOM 实测）：mermaid 在渲染前测量文字，此时 Noto Sans SC webfont 往往尚未
+   就绪，按 fallback 字体测宽；渲染后字体加载、中文变宽导致折行数增加——foreignObject
+   高度按测量值固定（如 72px）而文字实际需要 84px，末行被默认的 overflow:hidden 裁掉。
+   实测节点矩形高度（102px）本身有余量，故允许 foreignObject 溢出显示即可完整修复；
+   同时锁定 label 行高与外边距，防止继承正文样式引入额外偏差。 */
+.mermaid foreignObject { overflow: visible; }
+.mermaid foreignObject > div,
+.mermaid .nodeLabel,
+.mermaid .edgeLabel,
+.mermaid .label {
+  line-height: 1.5 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
