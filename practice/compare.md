@@ -75,8 +75,8 @@ quadrantChart
   Hermes: [0.35, 0.6]
   DeepAgent: [0.55, 0.7]
   OpenClaw: [0.5, 0.55]
-  Claude Code: [0.4, 0.8]
-  Codex: [0.42, 0.78]
+  Claude Code: [0.38, 0.84]
+  Codex: [0.48, 0.74]
   DeepSeek Harness: [0.78, 0.72]
 ```
 
