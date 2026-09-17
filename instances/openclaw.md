@@ -129,7 +129,7 @@ export const networkPlugin: Plugin = {
 ① 按文档部署核心 → ② 先接 CLI 通道，确认 Gateway 统一会话 → ③ 加一个连接器或插件，体会"核心不动、能力外挂"。
 
 ::: info 【事实】
-来源：openclaw-docs.dx3n.cn（本站对标对象）。上述配置/接口为依据官方文档的示意实现；"凸显 harness/Gateway"是本体系的结构化定位（【推断】）。
+> 来源：[openclaw-docs](https://openclaw-docs.dx3n.cn/)（[S1](/practice/sources)，本站对标对象）（覆盖：OpenClaw 实例 · 06）。上述配置/接口为**依据官方文档的示意实现（【示意实现】）**；"凸显 harness/Gateway"是本体系的结构化定位（【推断】）。
 :::
 
 ## 小测验

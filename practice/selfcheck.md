@@ -53,6 +53,33 @@ Track C 第三页：**全站唯一口径页**。这里定义两件事——(1) 1
 本页常量表是**唯一权威**。若某实例页或对比页的分数与本表语义冲突，以本表为准，并回 [事实源清单](/practice/sources) 复核——这就是"防止漂移"的机制。
 :::
 
+## 三档 ↔ gate 对应（把"熟悉"落到可运行）
+
+"熟悉"档不靠自述，靠**能跑通对应 gate**：
+
+| 章 | 熟悉档的硬指标 | 验证入口 |
+|---|---|---|
+| 01 prompt | 能写出含 fallback 段的 system prompt，并用评估集量化前后差异 | — |
+| 02 context | 组装器在超预算输入下**降配不崩**；压缩后旧事件仍可回放 | [2 gate](/concepts/context/gate/context_gate) |
+| 03 harness | 门禁脚本在**故意违规**时返回失败；规则缺失时 fail-closed | [3 gate](/concepts/harness/gate/harness_gate) |
+| 04 loop | 去掉刹车会失控；加上后**必然停止** | [4 gate](/concepts/loop/gate/loop_gate) |
+| 05 graph | reducer 累加可见；条件边按真假走不同分支 | [5 gate](/concepts/graph/gate/graph_gate) |
+| 06 skill | SKILL.md 仅凭 description 就能被正确命中 | [6 gate](/concepts/skill/gate/skill_gate) |
+
+## "伪掌握"信号（红旗自检）
+
+出现以下情况，说明你以为的"会了"其实没到档：
+
+| 红旗 | 真实档位 | 该怎么补 |
+|---|---|---|
+| 能复述概念，但一让写代码就卡 | 只到"了解" | 回到该章 mechanism 页跑通示例 |
+| 代码能抄能跑，但说不清为什么这么设计 | 只到"熟悉" | 读该章 design 页的决策表与取舍 |
+| 能讲设计，但没跑过 gate | 未验证的"精通" | 跑 gate；跑不通就是没到 |
+| 把 gate 通过当"LLM 质量达标" | 概念错位 | 注意 loop gate **只验控制流**，不验模型质量（见 [4 gate](/concepts/loop/gate/loop_gate)） |
+| 引用来源只能说出公众号/博客名，给不出 URL | 未溯源 | 回 [事实源清单](/practice/sources) 核对 |
+
+> **一条底线**：任何"精通"主张，都必须能指向一个**可运行产物**或**可点击来源**；两者都指不出的，视为【未验证】。
+
 ## 小测验
 
 ::: details 点击展开题目与答案

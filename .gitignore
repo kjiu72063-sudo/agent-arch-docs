@@ -3,6 +3,7 @@ node_modules/
 .vitepress/dist/
 .vitepress/out/
 .vitepress/out2/
+.vitepress/out3/
 .vitepress/cache/
 # 注：package-lock.json 保留入库，用于复现依赖版本
 

@@ -132,6 +132,60 @@ print(result["messages"][-1].content)
 
 **手动上下文管理**：agent 可调用 `add_context(content, key)` / `delete_context(key)` 跨轮次保留信息（写进 `context_manager`）。
 
+### 中间件链配置（+1 真实代码块）
+
+多个中间件按注册顺序**环绕**每次模型调用（onion 模型），顺序决定横切行为：
+
+```python
+# 【示意实现】中间件链：顺序 = 横切执行顺序
+from deepagents.middleware import (
+    ContextSummarizationMiddleware,   # 超阈值压缩上下文
+    TodoListMiddleware,               # 注入/维护待办清单
+)
+
+agent = create_deep_agent(
+    model=model,
+    tools=tools,
+    middleware=[
+        TodoListMiddleware(),                      # ① 先进：注入计划
+        ContextSummarizationMiddleware(max_messages=30),  # ② 后进：临近调用前压缩
+    ],
+)
+# 调用链：before_model(TodoList) → before_model(Summarize) → LLM
+#         → after_model(Summarize) → after_model(TodoList)
+```
+
+### 子 agent 编排（LangGraph 视角，+1 真实代码块）
+
+DeepAgent 内部就是一张 LangGraph 图：主 agent 是"规划+调度"节点，子 agent 被包装成可调用工具。
+
+```python
+# 【示意实现】把子 agent 显式接成图的节点（概念示意，API 以官方为准）
+from langgraph.graph import StateGraph, START, END
+from typing import Annotated, TypedDict
+from langgraph.graph.message import add_messages
+
+class State(TypedDict):
+    messages: Annotated[list, add_messages]   # reducer：消息累积，不是覆盖
+    todo: list                                 # 计划清单
+
+def planner(state: State):
+    return {"todo": ["读 utils.py", "重构", "跑测试"]}
+
+def executor(state: State):
+    # 内部可调用 calculator_agent（子 agent 作为工具）
+    return {"messages": [("assistant", "executed step")]}
+
+g = StateGraph(State)
+g.add_node("planner", planner)
+g.add_node("executor", executor)
+g.add_edge(START, "planner")
+g.add_conditional_edges("planner", lambda s: "executor" if s["todo"] else END,
+                        {"executor": "executor", END: END})
+g.add_edge("executor", END)
+app = g.compile(checkpointer=MemorySaver())   # 挂 checkpointer 可续跑
+```
+
 ::: info 【事实】
 来源：[CSDN《LangChain deepagents 实践》](https://blog.csdn.net/weixin_44733966/article/details/156938858)（[S10](/practice/sources)）+ [LangChain 官方 API 文档](https://docs.langchain.com/oss/python/deepagents/overview)。上述调用为 **【示意实现】**（依来源归纳，非原文逐字复制，签名以官方为准）；"凸显 graph+loop"是本体系的结构化定位（【推断】）。详见 [事实源清单](/practice/sources)。
 :::

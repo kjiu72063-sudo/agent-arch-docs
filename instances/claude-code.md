@@ -63,6 +63,8 @@ flowchart TD
 
 ## 真机配置：三份可直接抄用的真实文件
 
+> **【示意实现】**：以下三份为依据源码剖析归纳的**格式示意**（键名与结构以 [官方文档](https://docs.anthropic.com/en/docs/claude-code) 为准），可直接作为模板起手，但照抄前请对照你安装版本的官方字段。
+
 下面三份配置是 Claude Code harness 的**核心可运行资产**（格式依据 sawzhang《deep-dive-claude-code》与 Anthropic 官方设置，【事实】；具体键名以你安装的版本为准）。
 
 ### ① 项目级 `CLAUDE.md`（等价 AGENTS.md，由 harness 注入 context）
@@ -129,7 +131,7 @@ flowchart TD
 **上手顺序**：① 建 `CLAUDE.md` → ② 配 `settings.json` 权限 → ③ 挂 hook 门禁 → ④ 按需加 Skill / MCP。
 
 ::: info 【事实】
-来源：github.com/sawzhang/deep-dive-claude-code（multi-part 结构已确认，25 章 + 2 附录；许可证按 MIT 处理）。上述配置格式以该仓库与 Anthropic 官方文档为准；"凸显 harness+loop"是本体系的结构化定位（【推断】）。
+> 来源：[sawzhang/deep-dive-claude-code](https://github.com/sawzhang/deep-dive-claude-code)（[S4](/practice/sources)，multi-part 结构已确认，25 章 + 2 附录；许可证按 MIT 处理）；配置格式另参 [Anthropic 官方文档](https://docs.anthropic.com/en/docs/claude-code)（覆盖：Claude Code 实例 · 1-6）。上述配置为**依据来源归纳的示意实现**；"凸显 harness+loop"是本体系的结构化定位（【推断】）。
 :::
 
 ## 小测验

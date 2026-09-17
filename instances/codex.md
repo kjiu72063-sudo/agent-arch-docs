@@ -111,7 +111,7 @@ def codex_loop(task, repo, max_iter=15):
 ① 写 `AGENTS.md` → ② 配 `config.toml`（沙箱 + 审批 + 环境隔离）→ ③ 在仓库跑一个真实工程任务，观察"改—验—再改"循环。
 
 ::: info 【事实】
-来源：cnblogs.com/smartloli/p/20684447（Codex 剖析）+ OpenAI 官方文档。上述配置键名与沙箱语义以官方为准；"凸显 harness+loop"是本体系的结构化定位（【推断】）。
+> 来源：[smartloli《Codex 剖析》](https://www.cnblogs.com/smartloli/p/20684447)（[S5](/practice/sources)）+ [openai/codex](https://github.com/openai/codex)（官方仓库，配置键名与沙箱语义以其为准）（覆盖：Codex 实例 · 3-1）。上述配置为**依据来源归纳的示意实现（【示意实现】）**；"凸显 harness+loop"是本体系的结构化定位（【推断】）。
 :::
 
 ## 小测验

@@ -81,7 +81,7 @@ A. 好看　B. 决定各段拼接顺序（稳定段在前、临时段在后）�
 :::
 
 ::: info 【事实】
-来源：sawzhang《深入理解 Claude Code 源码》；Hermes 源码分析（System Prompt 工程章节）；iceyao《DeepSeek Harness 源码深度解析》。上述结构为依据权威源的示意归纳。
+> 来源：[sawzhang/deep-dive-claude-code](https://github.com/sawzhang/deep-dive-claude-code)（[S4](/practice/sources)）· [luyao618/Hermes-Source-Code-Study](https://github.com/luyao618/Hermes-Source-Code-Study)（[S3](/practice/sources)）· [iceyao](https://www.iceyao.com.cn/post/2026-08-13-deepseek-harness%E6%BA%90%E7%A0%81%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90/)（[S7](/practice/sources)）（覆盖：1-6）。上述结构为依据权威源的示意归纳。
 :::
 
 > 上一节：[1-5 策略④⑤⑥](/concepts/prompt/think-tools-test) ｜ 下一节：[1-7 常见坑 + 自检](/concepts/prompt/pitfalls)

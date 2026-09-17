@@ -38,6 +38,27 @@ Track C 第一页：把六个实例放到**同一个 7 维口径**下对比，�
 以上数字是**本页的结构化初判（【推断】）**，用于帮助相对排序，不是官方基准。正式定稿前应在 [事实源清单](/practice/sources) 逐格复核，防止"各说各话"（这也是 7 维口径存在的意义）。
 :::
 
+## 评分依据（逐格理由）
+
+分数不是拍的，每格对应可指出的来源证据。下表给出**关键格的理由**（空格为未单独论证，沿用同维度基准）：
+
+| 实例 | 维度 | 分 | 依据（可回 [事实源](/practice/sources) 核） |
+|---|---|---|---|
+| OpenClaw | 整体架构 | 5 | Gateway 核心与通道解耦，插件外挂——架构边界最清晰（[S1](/practice/sources)） |
+| OpenClaw | 上手曲线 | 3 | 自托管 + 多通道配置，前期成本明显（[S1](/practice/sources)） |
+| Claude Code | 工具调用与执行循环 | 5 | 六层权限 + 工具管线 + hook 门禁，工程化最完整（[S4](/practice/sources)） |
+| Claude Code | 主要局限 | — | 商用闭源，不可自托管改造（【推断】） |
+| Codex | 工具调用与执行循环 | 5 | sandbox_mode + approval_policy 三档审批，执行受控（[S5](/practice/sources)） |
+| Codex | 主要局限 | — | 偏代码域，非软件工程任务适配弱（【推断】） |
+| deepseek-harness | skill 与能力扩展 | 5 | 一切皆插件（Cordis）；扩展性上限最高（[S7](/practice/sources)） |
+| deepseek-harness | 上手曲线 | 2 | developer preview + 插件体系陡峭（[S7](/practice/sources)） |
+| DeepAgent | 整体架构 | 4 | 基于 LangGraph，图编排强，但架构依附 LangChain（[S10](/practice/sources)） |
+| DeepAgent | 上手曲线 | 3 | 需理解 middleware/subagent 抽象（[S10](/practice/sources)） |
+| Hermes | 上下文与记忆 | 3 | 有记忆读写，但上下文压缩机制在源码中不如 others 突出（[S3](/practice/sources)） |
+| Hermes | 适用场景 | — | 通用研究/教学向（【推断】） |
+
+> 规则：**能给来源的格标来源；给不出的格保留【推断】**。评审时凡【推断】格必须补依据或降级为"未评"。
+
 ## 能力象限图
 
 横轴 = 上手难度（右=越难），纵轴 = 能力/场景定位（上=越强越通用）：

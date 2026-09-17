@@ -75,6 +75,30 @@ def read_file(path: str) -> str:
 
 > 要点：**工具不是"模型想调就能调"**——注册表 + 权限是 harness 的硬边界。
 
+**权限判定（harness 的 allow/deny 矩阵落点）**：
+
+```python
+# 【示意实现】调用前的机械权限判定：fail-closed
+ALLOW = {"read", "write_src", "run_tests"}
+DENY  = {"http_request", "git_push", "shell_rm"}
+
+def authorize(permission: str) -> bool:
+    """deny 优先；未声明的一律拒绝（fail-closed，而不是默认放行）。"""
+    if permission in DENY:
+        return False
+    if permission not in ALLOW:
+        return False        # 未登记 = 拒绝（关键：不是默认允许）
+    return True
+
+# 注册表在 invoke 前调用它
+def registry_invoke(call):
+    perm = TOOL_PERMISSIONS.get(call.name)
+    if not authorize(perm):
+        raise PermissionError(f"denied: {call.name} (perm={perm})")
+    return TOOLS[call.name](**call.args)
+```
+> 注意 `else` 分支：**未登记的权限一律拒绝**——这就是 [3-1 fail-closed](/concepts/harness/mechanism) 的代码形态。若反过来写（默认放行），新增工具忘了配权限就会裸奔。
+
 ### ② 对话循环（loop）—— 五零件的真实串联
 
 每一轮"思考 → 工具调用 → 结果回填 → 验证"的骨架：
@@ -101,7 +125,7 @@ def run_turn(user_input, tools, max_iter=10):
 3. 扩展：新增一个自定义工具注册进注册表，或写一个新技能让其被按需加载。
 
 ::: info 【事实】
-来源：github.com/luyao618/Hermes-Source-Code-Study（指向 NousResearch/hermes-agent）。具体接口以官方 README / 源码为准；"凸显 harness+loop"是本体系的结构化定位（【推断】）。
+> 来源：[luyao618/Hermes-Source-Code-Study](https://github.com/luyao618/Hermes-Source-Code-Study)（[S3](/practice/sources)，指向 NousResearch/hermes-agent）（覆盖：Hermes 实例）。上述代码为**依据来源归纳的示意实现（【示意实现】）**，具体接口以官方 README / 源码为准；"凸显 harness+loop"是本体系的结构化定位（【推断】）。
 :::
 
 ## 小测验

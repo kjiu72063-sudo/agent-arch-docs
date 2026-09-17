@@ -54,7 +54,7 @@ flowchart TD
 ## 工具流水线（真实三阶段，源码为准）
 
 ::: warning 勘误
-此前本站把流水线写成"声明/注册 → 组装/绑定 → 执行/回填"，那是**自创的**，与源码不符。iceyao 源码解析给出的真实三阶段如下（【事实】）：
+此前本站把流水线写成"声明/注册 → 组装/绑定 → 执行/回填"，那是**自创的**，与源码不符。iceyao 源码解析给出的真实三阶段如下（【事实】）。下方 TS 片段为**对源码的简化转写（【示意实现】）**，非原文逐字复制。
 :::
 
 ```mermaid
@@ -114,10 +114,30 @@ for (const seq of nodes.slice(this.derivedNodes)) {
 ```
 > 模型历史**不是另存一份数据**，而是从 append-only 日志**投影**出来的：只有 `user/message`、`assistant/message`、`tool/result` 三类 surface 事件进上下文；流式 `assistant/chunk` 只用于回放保真，不占上下文预算。
 
+## 源码级：Cordis 插件（一切皆插件）
+
+"everything is a plugin" 落到代码，就是**实现一个 Service 并让 Cordis 自动装配**：
+
+```ts
+// 【示意实现】最小 Cordis 插件：typing-service
+import { Service } from '@cordisjs/core'
+
+export default class TypingService extends Service {
+  static [Service.provide] = 'typing'          // 声明提供的能力名
+  static [Service.inject] = ['database']       // 声明依赖（Cordis 按此装配顺序）
+
+  async typing(text: string): Promise<string> {
+    const db = this.ctx.database                 // 注入的依赖
+    return db.normalize(text)
+  }
+}
+// 注册即生效、卸载即撤销：插件树由 Cordis 按依赖关系自动装配/拆除
+```
+
 ## 安装并搭一个插件化 agent
 
 1. 按官方文档安装 DeepSeek Harness 与 Cordis 运行时（`npx @deepseek-ai/dsh web`，默认仅回环 `127.0.0.1:3080`）。
-2. 新建一个最小插件（实现一个 Service），观察其被 Cordis 自动装配。
+2. 新建一个最小插件（实现一个 Service，如上），观察其被 Cordis 自动装配。
 3. 用 `ReactLoopAgent` 驱动，挂上工具族，跑一个多轮任务并观察 session 事件流。
 
 ::: info 【事实】
