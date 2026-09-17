@@ -128,6 +128,22 @@ def run_turn(user_input, tools, max_iter=10):
 > 来源：[luyao618/Hermes-Source-Code-Study](https://github.com/luyao618/Hermes-Source-Code-Study)（[S3](/practice/sources)，指向 NousResearch/hermes-agent）（覆盖：Hermes 实例）。上述代码为**依据来源归纳的示意实现（【示意实现】）**，具体接口以官方 README / 源码为准；"凸显 harness+loop"是本体系的结构化定位（【推断】）。
 :::
 
+## 局限与不适用场景
+
+| 局限 | 说明 | 何时别用 |
+|---|---|---|
+| 生态较窄 | 社区与第三方集成远少于 Claude Code / Codex（[对比矩阵](/practice/compare) 给"生态较窄"） | 需要大量现成插件/IDE 集成时 |
+| 偏研究/教学定位 | 目标是"可读的 agent 框架范例"，不是生产级工程产品 | 需要企业级权限治理、审计合规时 |
+| 上下文压缩不突出 | 源码里记忆/压缩机制的工程化程度弱于 DeepSeek Harness、Claude Code | 长任务、超长上下文场景 |
+
+**替代方案**：追求成熟工程与权限治理 → [Claude Code](/instances/claude-code) / [Codex](/instances/codex)；追求插件化扩展 → [DeepSeek Harness](/instances/deepseek-harness)。
+
+## 常见坑与反模式
+
+- **坑① 把工具注册表当纯装饰器**：`@tool_registry.register` 只做"登记"，**不等于授权**。反模式是登记完直接执行；正解是在 `invoke` 前过一遍权限判定（见上文 `registry_invoke`）。
+- **坑② 权限默认放行**：`authorize()` 若把 else 写成 `return True`，**新增工具忘了配权限就会裸奔**。必须 fail-closed（未登记即拒绝）。
+- **坑③ 盲抄接口签名**：`@tool_registry.register(...)` 是**示意**写法，装饰器名与参数随版本变化；照抄前核对你拉取的源码版本。
+
 ## 小测验
 
 ::: details 点击展开题目与答案

@@ -132,6 +132,23 @@ export const networkPlugin: Plugin = {
 > 来源：[openclaw-docs](https://openclaw-docs.dx3n.cn/)（[S1](/practice/sources)，本站对标对象）（覆盖：OpenClaw 实例 · 06）。上述配置/接口为**依据官方文档的示意实现（【示意实现】）**；"凸显 harness/Gateway"是本体系的结构化定位（【推断】）。
 :::
 
+## 局限与不适用场景
+
+| 局限 | 说明 | 何时别用 |
+|---|---|---|
+| 自托管较重 | 需自行部署核心 + 各通道（含微信/Telegram 等凭据与网络） | 只想跑一个本地 CLI 助手时 |
+| 多通道会话需自设 | `sessionKey` 的隔离策略要自己设计，**配错会串会话** | 缺少会话隔离设计经验时 |
+| 通道/插件生态依赖社区 | 覆盖范围与维护活跃度不稳定 | 需要官方长期支持的通道 |
+
+**替代方案**：单通道 / 轻量 → [Hermes](/instances/hermes) 或 [Claude Code](/instances/claude-code)；需要图编排的复杂流程 → [DeepAgent](/instances/deepagent)。
+
+## 常见坑与反模式
+
+- **坑① `sessionKey` 只用 `userId`**：私聊与群聊会**共用同一会话**，上下文互相污染。应带上 `chatId` / 房间号（本文示例为 `my-channel:${chatId}`）。
+- **坑② 插件 `teardown` 不撤销注册**：热重载后**工具被重复注册**，模型看到重复 schema。注册即副作用，卸载必须撤销。
+- **坑③ 凭据写进配置文件**：应走环境变量引用（示例中的 `${TELEGRAM_TOKEN}`），**配置文件可能进版本库**。
+- **坑④ 通道连接器里写业务逻辑**：连接器只该做"消息 ↔ 统一格式"的翻译；把业务塞进连接器会**让核心与通道重新耦合**，失去 Gateway 的意义。
+
 ## 小测验
 
 ::: details 点击展开题目与答案

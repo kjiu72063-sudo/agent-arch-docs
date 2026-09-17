@@ -114,6 +114,23 @@ def codex_loop(task, repo, max_iter=15):
 > 来源：[smartloli《Codex 剖析》](https://www.cnblogs.com/smartloli/p/20684447)（[S5](/practice/sources)）+ [openai/codex](https://github.com/openai/codex)（官方仓库，配置键名与沙箱语义以其为准）（覆盖：Codex 实例 · 3-1）。上述配置为**依据来源归纳的示意实现（【示意实现】）**；"凸显 harness+loop"是本体系的结构化定位（【推断】）。
 :::
 
+## 局限与不适用场景
+
+| 局限 | 说明 | 何时别用 |
+|---|---|---|
+| 偏代码域 | 为软件工程任务优化；客服、运营、多轮闲聊类适配弱 | 非工程类对话助手场景 |
+| 沙箱依赖本地环境 | `sandbox_mode` 的实际隔离能力随平台而异（Windows 下与 Linux 有差异） | 需要强隔离且平台支持不足时 |
+| 模型绑定 OpenAI | 与 Claude Code 同样存在 Provider 绑定 | 要求可替换模型时 |
+
+**替代方案**：需要多通道/对话式助手 → [OpenClaw](/instances/openclaw)；需要插件化自研 → [DeepSeek Harness](/instances/deepseek-harness)。
+
+## 常见坑与反模式
+
+- **坑① 图省事开 `danger-full-access`**：等于**放弃隔离**，任何越权命令都会真执行。默认应停在 `workspace-write`，只在可信仓库临时放开。
+- **坑② `network_access=true` + `inherit="all"`**：把全部环境变量（含凭据）暴露给沙箱进程，**存在外联泄露风险**。用 `inherit="core"` 最小继承。
+- **坑③ 把 `AGENTS.md` 写成百科全书**：与 CLAUDE.md 同病——**越厚越稀释**。只留"地图 + 机器可验证的硬纪律"。
+- **坑④ 忘了审批策略**：`approval_policy="never"` 会跳过所有人工确认，危险动作无人拦；生产环境建议 `on-request`。
+
 ## 小测验
 
 ::: details 点击展开题目与答案

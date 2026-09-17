@@ -144,6 +144,23 @@ export default class TypingService extends Service {
 来源：官方 [github.com/deepseek-ai/deepseek-harness](https://github.com/deepseek-ai/deepseek-harness)（everything-is-a-plugin、Cordis、developer preview、MIT）+ [iceyao《DeepSeek Harness 源码深度解析》](https://www.iceyao.com.cn/post/2026-08-13-deepseek-harness%E6%BA%90%E7%A0%81%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90/)（[S7](/practice/sources)；上述 `ReactLoopAgent` / session 事件 / 工具流水线代码均引自该文对源码的拆解，已核对）+ [ChesterXue《deepseek harness 解析》](https://blog.csdn.net/ChesterXue/article/details/163745888)（[S6](/practice/sources)）。"凸显 harness+loop"是本体系的结构化定位（【推断】）。详见 [事实源清单](/practice/sources)。
 :::
 
+## 局限与不适用场景
+
+| 局限 | 说明 | 何时别用 |
+|---|---|---|
+| **developer preview** | 插件协议与 API 尚未稳定，破坏性变更可能发生 | 需要长期稳定接口的生产系统 |
+| 学习曲线陡 | 要同时掌握 **Cordis 插件树** + **事件溯源投影** 两套心智模型 | 团队只有很少时间投入时 |
+| 文档/社区尚薄 | 中文资料集中在少数几篇解析，官方文档仍在补 | 需要成熟社区支持时 |
+
+**替代方案**：需要稳定生产接口与丰富生态 → [Claude Code](/instances/claude-code) / [Codex](/instances/codex)；需要多通道部署 → [OpenClaw](/instances/openclaw)。
+
+## 常见坑与反模式
+
+- **坑① 把 `session` 当普通消息数组改**：直接改历史会**破坏 append-only 不变量**，导致投影失真、无法回放。压缩必须走"追加 `replace` 事件 + 重建投影"（见上文 `compact`）。
+- **坑② spill 后没给模型"取回"手段**：把超大结果换成 locator 后，若模型没有读取全文的工具，信息等于**永久丢失**。locator 必须配一个"按 key 取全文"的工具。
+- **坑③ 插件依赖声明写错**：Cordis 按 `Service.inject` 决定装配顺序，依赖写错/循环依赖会导致**启动期装配失败**，且报错位置离现场较远。
+- **坑④ 混淆 step 与 turn**：一个 **turn 含 0..n 个 step**，一个 **step = 一次模型请求 + 其工具调用**。把两者当同一层会导致刹车与预算记账错位（见 [4-1](/concepts/loop/mechanism)）。
+
 ## 小测验
 
 ::: details 点击展开题目与答案

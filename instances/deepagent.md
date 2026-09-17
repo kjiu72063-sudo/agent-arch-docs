@@ -190,6 +190,23 @@ app = g.compile(checkpointer=MemorySaver())   # 挂 checkpointer 可续跑
 来源：[CSDN《LangChain deepagents 实践》](https://blog.csdn.net/weixin_44733966/article/details/156938858)（[S10](/practice/sources)）+ [LangChain 官方 API 文档](https://docs.langchain.com/oss/python/deepagents/overview)。上述调用为 **【示意实现】**（依来源归纳，非原文逐字复制，签名以官方为准）；"凸显 graph+loop"是本体系的结构化定位（【推断】）。详见 [事实源清单](/practice/sources)。
 :::
 
+## 局限与不适用场景
+
+| 局限 | 说明 | 何时别用 |
+|---|---|---|
+| 生态耦合 | 构建在 LangChain / LangGraph 之上，版本一并演进，升级需整体跟 | 想避开 LangChain 依赖时 |
+| 抽象层较多 | middleware / subagent / toolkit 多层嵌套，**调试链路长** | 简单单循环任务 |
+| 嵌套放大成本 | 子 agent 作为工具会带来额外模型调用，**token 与延迟随嵌套层数放大** | 成本敏感或低延迟场景 |
+
+**替代方案**：轻量单循环 → 直接用 [05 graph](/concepts/graph) 的 StateGraph 或裸 loop；需要完整权限外壳 → [Claude Code](/instances/claude-code) / [Codex](/instances/codex)。
+
+## 常见坑与反模式
+
+- **坑① 不挂 checkpointer 跑长任务**：进程中断即**全部丢失**，无法续跑。`compile(checkpointer=...)` 是长任务的必需品。
+- **坑② 中间件顺序随手放**：中间件按注册顺序环绕调用，**顺序错会逻辑错**——例如把压缩放在"注入待办"之后，会把刚注入的计划一起压掉。
+- **坑③ 子 agent 无节制嵌套**：subagent 里再开 subagent，token 指数上升。应限制嵌套深度并给每层设预算。
+- **坑④ `messages` 忘了声明 reducer**：用普通 `list` 字段会被**整体覆盖**（历史丢失），必须 `Annotated[list, add_messages]`（见 [5-1 reducer](/concepts/graph/mechanism)）。
+
 ## 小测验
 
 ::: details 点击展开题目与答案

@@ -134,6 +134,23 @@ flowchart TD
 > 来源：[sawzhang/deep-dive-claude-code](https://github.com/sawzhang/deep-dive-claude-code)（[S4](/practice/sources)，multi-part 结构已确认，25 章 + 2 附录；许可证按 MIT 处理）；配置格式另参 [Anthropic 官方文档](https://docs.anthropic.com/en/docs/claude-code)（覆盖：Claude Code 实例 · 1-6）。上述配置为**依据来源归纳的示意实现**；"凸显 harness+loop"是本体系的结构化定位（【推断】）。
 :::
 
+## 局限与不适用场景
+
+| 局限 | 说明 | 何时别用 |
+|---|---|---|
+| 商用闭源 | 无法自托管、无法改内核；六层权限与 hook 只能"用"，不能"换实现" | 需要完全自托管 / 离线部署时 |
+| 模型绑定 | 能力与成本绑定 Anthropic 模型，无法替换为本地/其他 Provider | 有私有化模型要求时 |
+| 强依赖官方运行时 | 配置键名与 hook 事件随版本演进，升级需跟随 | 需要长期冻结接口时 |
+
+**替代方案**：需要可自托管 + 可换模型 → [OpenClaw](/instances/openclaw) / [Hermes](/instances/hermes) / [DeepSeek Harness](/instances/deepseek-harness)。
+
+## 常见坑与反模式
+
+- **坑① 把 `CLAUDE.md` 写成手册**：塞进全部规范会**稀释指令**、抬高每轮预算。正解是"地图 + 目录指针"，细则放 `docs/` 按需读取。
+- **坑② hook 里做重活**：`PostToolUse` **每次改文件都会触发**，把 `pytest` 全量跑塞进去会拖垮整个循环。应跑"快检查"（lint / 单测子集），全量留给提交前。
+- **坑③ 权限开太宽**：`allow` 里写 `Bash(*)` 等于**放弃六层权限的意义**；应按最小必要授权，危险动作留在 `deny` 或审批层。
+- **坑④ 把"会话压缩"当免费**：压缩会丢信息，必须保证不可再生的约束/决策**不进入摘要**（见 [2-2 compaction](/concepts/context/design)）。
+
 ## 小测验
 
 ::: details 点击展开题目与答案
