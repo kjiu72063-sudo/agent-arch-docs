@@ -50,7 +50,7 @@ flowchart TD
   style PL fill:#0d7d6e,color:#fff
 ```
 
-## 源码级：配置 + 连接器 + 插件骨架
+## 配置 + 连接器 + 插件骨架
 
 以下三份是 OpenClaw harness 的核心资产（格式依据 openclaw-docs，【事实】；具体字段以官方文档为准）。
 
@@ -149,6 +149,26 @@ export const networkPlugin: Plugin = {
 - **坑③ 凭据写进配置文件**：应走环境变量引用（示例中的 `${TELEGRAM_TOKEN}`），**配置文件可能进版本库**。
 - **坑④ 通道连接器里写业务逻辑**：连接器只该做"消息 ↔ 统一格式"的翻译；把业务塞进连接器会**让核心与通道重新耦合**，失去 Gateway 的意义。
 
+## 架构决策与取舍
+
+| 决策 | 做法 | 放弃了什么 |
+|---|---|---|
+| **核心与通道解耦** | 核心只认 `ChannelConnector` 接口 | 抽象层数：多一层接口心智 |
+| **插件 setup/teardown 对称** | 注册即副作用、卸载即撤销 | 使用纪律：不对称会导致重复注册 |
+| **会话隔离交给 `sessionKey`** | 由使用方设计键规则 | 安全责任外移：配错会串会话 |
+| **配置引用环境变量** | 凭据走 `${VAR}` 引用 | 便利性：部署多一步环境准备 |
+
+> 与 [DeepSeek Harness](/instances/deepseek-harness) 的差异：两者都是"插件化"，但 OpenClaw 的插件边界是**通道/工具**，DSH 的插件边界是**框架级单元（Context/Service/Event/Effect）**。
+
+## 性能、成本与横向对比
+
+| 维度 | OpenClaw | 参照对象 |
+|---|---|---|
+| token 开销 | 低-中：按通道独立会话，不共享无关历史 | 低于 [Claude Code](/instances/claude-code) |
+| 延迟 | 低：无 hook 检查开销，Gateway 只做转发与统一 | 快于 [Claude Code](/instances/claude-code) 的编辑即检查 |
+| 成本模型 | 与通道数、并发会话数正相关 | 需按通道配额规划 |
+| 定位 | 多通道助手平台（自托管） | vs [Hermes](/instances/hermes)：OpenClaw 强"多入口部署"，Hermes 强"框架可读性" |
+
 ## 小测验
 
 ::: details 点击展开题目与答案
@@ -166,10 +186,10 @@ A. 重训模型　B. 新增一个 Gateway 连接器　C. 重写核心
 
 ## 三档自检
 
-| 档位 | 你能做到 |
-|---|---|
-| 了解 | 说出 OpenClaw 是自托管多通道平台，凸显 harness/Gateway |
-| 熟悉 | 画得出"一个核心 + 多通道 + 插件"的 Gateway 架构 |
-| 精通 | 能新增一个通道连接器或插件，理解核心-外挂的 harness 解耦 |
+| 档位 | 你能做到 | 判据（怎么算达标） |
+|---|---|---|
+| 了解 | 说出 OpenClaw 是自托管多通道平台，凸显 harness/Gateway | 说得出"核心不动、通道外挂"的解耦点在哪 |
+| 熟悉 | 画得出"一个核心 + 多通道 + 插件"的 Gateway 架构 | 能指出 `sessionKey` 决定会话隔离，`sessionKey` 只带 userId 会**串会话** |
+| 精通 | 新增一个通道连接器或插件，理解核心-外挂的 harness 解耦 | 插件 `teardown` 不撤销注册时你能识别**重复注册**问题；凭据全部走 `${VAR}` 引用 |
 
 > 上一实例：[DeepAgent](./deepagent) ｜ 相关概念：[02 context](/concepts/context) · [03 harness](/concepts/harness) ｜ 下一实例：[Claude Code](./claude-code)

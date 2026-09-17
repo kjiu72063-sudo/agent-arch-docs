@@ -151,6 +151,51 @@ flowchart TD
 - **坑③ 权限开太宽**：`allow` 里写 `Bash(*)` 等于**放弃六层权限的意义**；应按最小必要授权，危险动作留在 `deny` 或审批层。
 - **坑④ 把"会话压缩"当免费**：压缩会丢信息，必须保证不可再生的约束/决策**不进入摘要**（见 [2-2 compaction](/concepts/context/design)）。
 
+## 执行循环骨架（读 → 改 → 验）
+
+Claude Code 宣称 harness+loop 最完整，前文给了 harness 配置，这里补 **loop 的执行逻辑**——每轮"模型决策 → 工具执行（过权限）→ 结果回填 → 验证"：
+
+```python
+# 【示意实现】执行循环骨架：harness（权限/门禁）嵌在 loop 里
+def agent_loop(task, harness, max_turns=25):
+    messages = [sys(harness.agents_md), user(task)]        # ① CLAUDE.md 常驻注入
+    for turn in range(max_turns):                          # 刹车：轮次上限
+        resp = llm.chat(messages, tools=harness.tool_specs)
+        if not resp.tool_calls:                            # 模型不再要工具 → 收尾
+            return resp.content
+        for call in resp.tool_calls:
+            # ② 六层权限：每次工具调用都过 allow/deny，越权直接拒
+            if not harness.permit(call.name, call.args):
+                messages.append(tool_result(call, "DENIED by permission"))
+                continue
+            result = harness.run(call)                     # ③ 按是否写文件决定是否走沙箱
+            messages.append(tool_result(call, result))
+            # ④ PostToolUse hook：改了文件就跑检查，不合规 exit 2 阻断
+            if call.name in {"Edit", "Write"}:
+                if harness.hook_post_tool_use() != 0:
+                    messages.append(sys("检查未通过，请修复后再继续"))
+    return "达到轮次上限，停止"
+```
+> 三个要点：**权限在循环内逐次判定**（不是一次性）、**hook 是循环的一部分**（改文件即验）、**轮次上限是硬刹车**。这与 [04 loop 三刹车](/concepts/loop/mechanism) 一一对应。
+
+## 架构决策与取舍
+
+| 决策 | 做法 | 放弃了什么 |
+|---|---|---|
+| **六层权限递进** | `defaultMode` + allow/deny + hook 三层叠加 | 配置复杂度：要理解层级关系才能调对 |
+| 项目规则**按目录层级加载** | 子目录 `CLAUDE.md` 就近覆盖 | 全局一致性：不同目录规则可能不同 |
+| **hook 机械化门禁** | 改文件即跑检查、`exit 2` 阻断 | 循环速度：每次编辑都触发检查 |
+| 会话**压缩摘要** | 长历史摘要化以省窗口 | 信息保真：摘要会丢细节（须保约束类） |
+
+## 性能、成本与横向对比
+
+| 维度 | Claude Code | 参照对象 |
+|---|---|---|
+| token 开销 | 较高：常驻工具说明 + CLAUDE.md + hook 反馈 | 高于 [Hermes](/instances/hermes) |
+| 延迟 | 中：hook 每次编辑触发检查 | 慢于无 hook 的 [OpenClaw](/instances/openclaw) |
+| 成本模型 | 中-高：轮次 × 工具 × 检查 | 与 [Codex](/instances/codex) 同量级 |
+| 定位 | 软件工程（闭源、体验最好） | vs [Codex](/instances/codex)：同域，CC 更重工程化、Codex 更重沙箱隔离 |
+
 ## 小测验
 
 ::: details 点击展开题目与答案
@@ -168,10 +213,10 @@ A. graph　B. harness（常驻上下文注入）　C. 仅 prompt 层
 
 ## 三档自检
 
-| 档位 | 你能做到 |
-|---|---|
-| 了解 | 说出 Claude Code 凸显 harness+loop，有六层权限与会话压缩 |
-| 熟悉 | 能画六层权限递进图，并说明会话压缩对应 context 哪一策略 |
-| 精通 | 能在真实项目配好 CLAUDE.md + hook + skill + MCP，并按风险调权限层级 |
+| 档位 | 你能做到 | 判据（怎么算达标） |
+|---|---|---|
+| 了解 | 说出 Claude Code 凸显 harness+loop，有六层权限与会话压缩 | 说得出"六层权限"与"会话压缩"各属 harness 还是 context |
+| 熟悉 | 能画六层权限递进图，并说明会话压缩对应 context 哪一策略 | 能指出压缩属 [02 的 compaction](/concepts/context/design)，且知道它必须保留约束类信息 |
+| 精通 | 在真实项目配好 CLAUDE.md + hook + skill + MCP，并按风险调权限层级 | 故意让 hook 检查失败时**命令被 exit 2 阻断**；`git push` 类动作被 deny 拦下 |
 
 > 上一实例：[OpenClaw](./openclaw) ｜ 相关概念：[03 harness](/concepts/harness) · [04 loop](/concepts/loop) · [06 skill](/concepts/skill) ｜ 下一实例：[Codex](./codex)

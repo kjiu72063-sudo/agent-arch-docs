@@ -1,10 +1,7 @@
 # 依赖与生成物（不入库）
 node_modules/
 .vitepress/dist/
-.vitepress/out/
-.vitepress/out2/
-.vitepress/out3/
-.vitepress/out4/
+.vitepress/out*/
 .vitepress/cache/
 # 注：package-lock.json 保留入库，用于复现依赖版本
 

@@ -51,6 +51,17 @@ flowchart TD
 
 ## 源码导读：最值得看的两处
 
+> **怎么定位（搜索锚点，【导航】非事实断言）**：本文不臆造文件路径。请在你 clone 的 [Hermes-Source-Code-Study](https://github.com/luyao618/Hermes-Source-Code-Study) 里用下列关键词检索，命中处即对应本实例讲的两处：
+>
+> | 要看的机制 | 搜索锚点 | 对应主轴 |
+> |---|---|---|
+> | 工具注册与权限 | `tool_registry`、`register(`、`permission` | [03 harness](/concepts/harness) |
+> | 对话循环 | `chat(`、`tool_calls`、`while` / `for` 循环体 | [04 loop](/concepts/loop) |
+> | System Prompt 工程 | `system_prompt`、`PromptSection` 类名 | [01 prompt](/concepts/prompt) |
+> | 记忆读写 | `memory`、`add_context` | [02 context](/concepts/context) |
+>
+> 检索命中后再对照本页的代码示意——**先定位，再理解**，避免对着 README 空想。
+
 ### ① 工具注册表（tool registry）—— harness 的权限落点
 
 工具在 Hermes 里以**声明式 schema 注册**，由注册表统一登记、校验参数、并在 harness 授权后才执行。典型形态（依据 NousResearch/hermes-agent 的工具注册机制，【事实】；具体装饰器/类名以你拉取的源码版本为准）：
@@ -144,6 +155,25 @@ def run_turn(user_input, tools, max_iter=10):
 - **坑② 权限默认放行**：`authorize()` 若把 else 写成 `return True`，**新增工具忘了配权限就会裸奔**。必须 fail-closed（未登记即拒绝）。
 - **坑③ 盲抄接口签名**：`@tool_registry.register(...)` 是**示意**写法，装饰器名与参数随版本变化；照抄前核对你拉取的源码版本。
 
+## 架构决策与取舍
+
+| 决策 | 做法 | 放弃了什么 |
+|---|---|---|
+| 工具用**声明式 schema 注册** | 注册表统一登记 → 参数校验 → 权限比对 | 灵活性：新增工具要写完整注册元数据 |
+| **System prompt 独立成工程模块** | 可随模型/场景切换拼装 | 简单性：多一层抽象与配置 |
+| 记忆读写与上下文**显式分离** | 由使用方决定何时读写 | 自动化：压缩策略需自己设计 |
+
+> 对比 [03 harness 决策表](/concepts/harness/design)：Hermes 选"显式 > 隐式"，把控制权交回使用方——**可读性换便利性**。
+
+## 性能、成本与横向对比
+
+| 维度 | Hermes | 参照对象 |
+|---|---|---|
+| token 开销 | 中：system prompt 模块化，可裁剪 | 低于 Claude Code 的完整工具说明 |
+| 延迟 | 低-中：单循环无图编排开销 | 快于 [DeepAgent](/instances/deepagent) 的多中间件链 |
+| 扩展成本 | 中：需写注册元数据 | 高于 [OpenClaw](/instances/openclaw) 的插件外挂 |
+| 定位 | 通用研究 / 教学 | 与 [OpenClaw](/instances/openclaw)（多通道）、[DeepSeek Harness](/instances/deepseek-harness)（插件化）互补 |
+
 ## 小测验
 
 ::: details 点击展开题目与答案
@@ -161,10 +191,10 @@ A. 工具注册表　B. 记忆模块　C. 技能加载
 
 ## 三档自检
 
-| 档位 | 你能做到 |
-|---|---|
-| 了解 | 说出 Hermes 是框架而非模型，列出其核心模块（循环/工具/技能/记忆/MCP） |
-| 熟悉 | 能指出工具注册表与对话循环各对应主轴的哪个工程层 |
-| 精通 | 能给 Hermes 新增一个工具并跑通，或扩展一个技能被按需加载 |
+| 档位 | 你能做到 | 判据（怎么算达标） |
+|---|---|---|
+| 了解 | 说出 Hermes 是框架而非模型，列出核心模块（循环/工具/技能/记忆/MCP） | 一口气说出 ≥4 个核心模块且不混淆归属 |
+| 熟悉 | 指出工具注册表与对话循环各对应主轴的哪个工程层 | 能指着代码说出"这行是 03 的权限判定 / 这行是 04 的循环" |
+| 精通 | 给 Hermes 新增一个工具并跑通，或扩展一个技能被按需加载 | 新增工具在**未配权限时被拒**（fail-closed），配好后可正常调用 |
 
 > 相关概念：[03 harness](/concepts/harness) · [04 loop](/concepts/loop) ｜ 下一实例：[DeepAgent](./deepagent)

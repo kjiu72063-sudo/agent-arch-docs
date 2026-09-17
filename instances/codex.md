@@ -48,7 +48,7 @@ flowchart TD
   style F fill:#b45309,color:#fff
 ```
 
-## 源码级：三份可直接抄用的真实配置
+## 三份可直接抄用的配置
 
 下面三份配置是 Codex harness 的核心资产（格式依据 [smartloli《Codex 剖析》](https://www.cnblogs.com/smartloli/p/20684447) 与 OpenAI 官方文档，【事实】；具体键名以你安装的版本为准）。
 
@@ -131,6 +131,26 @@ def codex_loop(task, repo, max_iter=15):
 - **坑③ 把 `AGENTS.md` 写成百科全书**：与 CLAUDE.md 同病——**越厚越稀释**。只留"地图 + 机器可验证的硬纪律"。
 - **坑④ 忘了审批策略**：`approval_policy="never"` 会跳过所有人工确认，危险动作无人拦；生产环境建议 `on-request`。
 
+## 架构决策与取舍
+
+| 决策 | 做法 | 放弃了什么 |
+|---|---|---|
+| **沙箱三档** `sandbox_mode` | read-only → workspace-write → danger-full-access | 便利性：越隔离越难干活，需按风险手动切换 |
+| **网络默认禁用** | `network_access=false` | 需联网的任务（拉依赖、查文档）须临时放开 |
+| **AGENTS.md 常驻宪法** | 每仓库一份，注入 context | 跨项目复用：换仓库就要重写 |
+| **审批策略可调** | `on-request` / `on-failure` / `never` | 自动化程度：越保守越需要人介入 |
+
+> 取向与 [Claude Code](/instances/claude-code) 不同：Codex 把**隔离与审批**放在便利性之前（fail-closed 优先）。
+
+## 性能、成本与横向对比
+
+| 维度 | Codex | 参照对象 |
+|---|---|---|
+| token 开销 | 中：AGENTS.md 精简 + 命令输出回灌 | 低于 [Claude Code](/instances/claude-code) 的完整工具说明 |
+| 延迟 | 中：沙箱进程启动有开销 | 沙箱越严格越慢 |
+| 成本模型 | 中：轮次 × 验证（cargo test/clippy） | 与 [Claude Code](/instances/claude-code) 同量级 |
+| 定位 | 软件工程（Rust 核心、沙箱隔离强） | vs [Claude Code](/instances/claude-code)：同域，Codex 更重"隔离"，CC 更重"权限+门禁" |
+
 ## 小测验
 
 ::: details 点击展开题目与答案
@@ -148,10 +168,10 @@ A. 加速模型推理　B. 隔离执行，防止改动/命令越界　C. 代替�
 
 ## 三档自检
 
-| 档位 | 你能做到 |
-|---|---|
-| 了解 | 说出 Codex 是本地软件工程 agent（Rust），凸显 harness+loop |
-| 熟悉 | 画出"AGENTS.md → 读码 → 规划 → 沙箱改 → 验证"的执行循环 |
-| 精通 | 能在仓库配好 AGENTS.md + skills + sandbox 并跑通一个真实工程任务 |
+| 档位 | 你能做到 | 判据（怎么算达标） |
+|---|---|---|
+| 了解 | 说出 Codex 是本地软件工程 agent（Rust），凸显 harness+loop | 说得出它靠"沙箱 + AGENTS.md"约束，而非仅靠模型自觉 |
+| 熟悉 | 画出"AGENTS.md → 读码 → 规划 → 沙箱改 → 验证"的执行循环 | 能指出循环里哪一步是**机械化验证**（cargo test/clippy），而非模型自评 |
+| 精通 | 在仓库配好 AGENTS.md + skills + sandbox 并跑通一个真实工程任务 | 把 `sandbox_mode` 调成 `danger-full-access` 时你能说出**风险差异**；网络默认关闭下任务仍能完成 |
 
 > 上一实例：[Claude Code](./claude-code) ｜ 相关概念：[02 context](/concepts/context) · [03 harness](/concepts/harness) · [04 loop](/concepts/loop) ｜ 下一实例：[DeepSeek Harness](./deepseek-harness)

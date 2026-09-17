@@ -70,7 +70,11 @@ flowchart LR
 | `execute` | — | 真正执行工具，带 fuse 中断信号 |
 | `tools/post-execute` | — | 结果后处理；**spill** 把超大结果替换成 locator |
 
-## 源码级：`ReactLoopAgent` 主循环
+## 源码级：三处关键实现
+
+以下三处是 DeepSeek Harness 最值得读的源码位置（均引自 [S7](/practice/sources) 对源码的拆解）。
+
+### ① 主循环 `ReactLoopAgent`
 
 最小执行单元定义精确：**一个 step = 一次模型请求 + 它调用的工具**；一个 **turn 包含 0..n 个 step**，在领取首条输入时打开、不再欠工作时关闭（iceyao 源码，【事实】）。
 
@@ -94,7 +98,7 @@ private async turn(): Promise<boolean> {
 ```
 > 关键顺序：**每一拍先写日志再执行**——这是"模型可见即已记录"不变量的根基（呼应 [02 context 的可审计压缩](/concepts/context/design)）。
 
-## 源码级：事件溯源 + 投影（session 即唯一事实来源）
+### ② 事件溯源 + 投影（session 即唯一事实来源）
 
 ```ts
 // packages/core/session/src/types.ts（简化）
@@ -114,7 +118,7 @@ for (const seq of nodes.slice(this.derivedNodes)) {
 ```
 > 模型历史**不是另存一份数据**，而是从 append-only 日志**投影**出来的：只有 `user/message`、`assistant/message`、`tool/result` 三类 surface 事件进上下文；流式 `assistant/chunk` 只用于回放保真，不占上下文预算。
 
-## 源码级：Cordis 插件（一切皆插件）
+### ③ Cordis 插件（一切皆插件）
 
 "everything is a plugin" 落到代码，就是**实现一个 Service 并让 Cordis 自动装配**：
 
@@ -161,6 +165,26 @@ export default class TypingService extends Service {
 - **坑③ 插件依赖声明写错**：Cordis 按 `Service.inject` 决定装配顺序，依赖写错/循环依赖会导致**启动期装配失败**，且报错位置离现场较远。
 - **坑④ 混淆 step 与 turn**：一个 **turn 含 0..n 个 step**，一个 **step = 一次模型请求 + 其工具调用**。把两者当同一层会导致刹车与预算记账错位（见 [4-1](/concepts/loop/mechanism)）。
 
+## 架构决策与取舍
+
+| 决策 | 做法 | 放弃了什么 |
+|---|---|---|
+| **一切皆插件（Cordis）** | 核心最小化，能力全靠插件树装配 | 上手成本：要理解插件树与依赖声明 |
+| **session 事件溯源 + 投影** | append-only 日志，模型历史是投影 | 存储与投影开销；需维护投影一致性 |
+| **spill 巨型结果 → locator** | 超预算结果存全文、上下文只放指针 | 二次往返：模型须有工具取回全文 |
+| **turn / step 两级执行** | step = 一次模型请求 + 其工具 | 概念负担：混淆两级会导致记账与刹车错位 |
+
+> 与 [Claude Code](/instances/claude-code) 的本质差异：Claude Code 把能力写在**配置与 hook**里，DeepSeek 把能力写在**插件**里——**配置 vs 插件**是两种扩展哲学。
+
+## 性能、成本与横向对比
+
+| 维度 | DeepSeek Harness | 参照对象 |
+|---|---|---|
+| token 开销 | 中：spill 机制**主动控预算**，是六者中最省的之一 | 优于 [DeepAgent](/instances/deepagent) 的嵌套放大 |
+| 延迟 | 中：插件装配在启动期，运行期开销小 | 但 spill 的二次取回会加一次往返 |
+| 成本模型 | 低-中：事件溯源不重复存消息 | 优于把历史另存一份的实现 |
+| 定位 | 插件化自研底座（preview） | vs [DeepAgent](/instances/deepagent)：DSH 强"插件组装"、DeepAgent 强"图编排" |
+
 ## 小测验
 
 ::: details 点击展开题目与答案
@@ -178,10 +202,10 @@ A. Context/Service/Event/Effect　B. CPU/GPU/TPU/NPU　C. Node/Edge/State/Reduce
 
 ## 三档自检
 
-| 档位 | 你能做到 |
-|---|---|
-| 了解 | 说出 DeepSeek Harness 基于 Cordis、"一切皆插件"，凸显 harness+loop |
-| 熟悉 | 能画出 Context/Service/Event/Effect 与 Seam/Profile/Bundle/Patch 结构 |
-| 精通 | 能新建一个 Cordis 插件并搭出插件化 agent，理解核心-外挂的扩展模型 |
+| 档位 | 你能做到 | 判据（怎么算达标） |
+|---|---|---|
+| 了解 | 说出 DeepSeek Harness 基于 Cordis、"一切皆插件"，凸显 harness+loop | 说得出 Context/Service/Event/Effect 四类插件单元各是什么 |
+| 熟悉 | 画出 Context/Service/Event/Effect 与 Seam/Profile/Bundle/Patch 结构 | 能指出"压缩"在事件溯源里是**追加 replace 事件**，而非改旧事件 |
+| 精通 | 新建一个 Cordis 插件并搭出插件化 agent，理解核心-外挂的扩展模型 | 插件 `Service.inject` 依赖写错时能定位**启动期装配失败**；能区分 step 与 turn |
 
 > 上一实例：[Codex](./codex) ｜ 相关概念：[02 context](/concepts/context) · [03 harness](/concepts/harness) · [04 loop](/concepts/loop) · [06 skill](/concepts/skill) ｜ 进阶：见 [Track C · 统一对比矩阵](/practice/compare)

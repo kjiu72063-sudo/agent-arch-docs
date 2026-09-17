@@ -79,7 +79,7 @@ sequenceDiagram
 
 > 这说明 05 讲的 reducer（`operator.add`/`add_messages`）在真实框架里就是 `messages`、`intermediate_steps` 等键的合并规则——抽象概念落到真实现。
 
-## 源码级：`create_deep_agent` 可运行调用
+## `create_deep_agent` 可运行调用
 
 以下代码依据 LangChain `deepagents` 公开 API（【事实】；具体签名以官方为准）。
 
@@ -207,6 +207,26 @@ app = g.compile(checkpointer=MemorySaver())   # 挂 checkpointer 可续跑
 - **坑③ 子 agent 无节制嵌套**：subagent 里再开 subagent，token 指数上升。应限制嵌套深度并给每层设预算。
 - **坑④ `messages` 忘了声明 reducer**：用普通 `list` 字段会被**整体覆盖**（历史丢失），必须 `Annotated[list, add_messages]`（见 [5-1 reducer](/concepts/graph/mechanism)）。
 
+## 架构决策与取舍
+
+| 决策 | 做法 | 放弃了什么 |
+|---|---|---|
+| **构建在 LangGraph 之上** | 直接复用图/状态/reducer/checkpoint | 独立性：绑定 LangChain 生态与版本 |
+| **子 agent 包装成工具** | 主 agent 通过工具调用调度子 agent | 可控性：嵌套后调用链变长、难追踪 |
+| **中间件环绕模型调用** | 压缩/待办等横切关注点插件化 | 调试复杂度：出错要穿透多层中间件 |
+| **预置 toolkit** | fs / bash / interpreter 开箱可用 | 定制性：特殊工具仍需自己写 |
+
+> 与 [Claude Code](/instances/claude-code) 的差异：DeepAgent 把"编排"做重（graph），Claude Code 把"约束"做重（harness）。
+
+## 性能、成本与横向对比
+
+| 维度 | DeepAgent | 参照对象 |
+|---|---|---|
+| token 开销 | 高：中间件 + 子 agent 嵌套放大 | 高于 [Hermes](/instances/hermes) / [OpenClaw](/instances/openclaw) |
+| 延迟 | 高：每层子 agent 是一次额外模型往返 | 高于单循环框架 |
+| 成本模型 | 随**嵌套深度**上升，需设预算上限 | 对应 [04 loop 三刹车](/concepts/loop/mechanism) |
+| 定位 | 复杂编排（多 agent、多步骤） | vs [DeepSeek Harness](/instances/deepseek-harness)：都强扩展，DeepAgent 走"图编排"、DSH 走"插件化" |
+
 ## 小测验
 
 ::: details 点击展开题目与答案
@@ -224,10 +244,10 @@ A. 必须手写所有节点　B. 一行建出基于图的复杂 agent　C. 只�
 
 ## 三档自检
 
-| 档位 | 你能做到 |
-|---|---|
-| 了解 | 说出 DeepAgent 基于 LangGraph，凸显 graph+loop |
-| 熟悉 | 能解释"规划节点 → 子 agent → 上下文总结"的中间件时序 |
-| 精通 | 能建一个带规划 + 子 agent + 上下文总结的可跑工程 |
+| 档位 | 你能做到 | 判据（怎么算达标） |
+|---|---|---|
+| 了解 | 说出 DeepAgent 基于 LangGraph，凸显 graph+loop | 说得出它用"图"承载编排、用"中间件"承载横切 |
+| 熟悉 | 解释"规划节点 → 子 agent → 上下文总结"的中间件时序 | 能指出中间件**顺序**如何影响结果（先注入 vs 先压缩） |
+| 精通 | 建一个带规划 + 子 agent + 上下文总结的可跑工程 | `messages` 属性定义**忘写 reducer 时会丢失历史**，你能识别并修正；长任务挂上 checkpointer 后可续跑 |
 
 > 上一实例：[Hermes](./hermes) ｜ 相关概念：[04 loop](/concepts/loop) · [05 graph](/concepts/graph) ｜ 下一实例：[OpenClaw](./openclaw)
