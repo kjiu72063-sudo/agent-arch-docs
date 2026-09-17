@@ -80,7 +80,7 @@ system_prompt = "\n\n".join(s for _, _, s in sorted(sections))
 ```
 
 ::: info 【事实】
-"增强的 LLM = 指令 + 额外上下文 + 工具" 出自 Anthropic《Building effective agents》；"分段 / 渐进披露"分别示例自 DeepSeek Harness（PromptSection 按 order 分段）与 harness engineering 的"地图而非手册"。详见 [事实源](/practice/compare)。
+"增强的 LLM = 指令 + 额外上下文 + 工具" 出自 Anthropic《Building effective agents》（[G1](/practice/sources)）；"分段 / 渐进披露"分别示例自 DeepSeek Harness（PromptSection 按 order 分段，[S7](/practice/sources)）与 harness engineering 的"地图而非手册"（[S8](/practice/sources)）。详见 [事实源清单](/practice/sources)。
 :::
 
 ## 小测验

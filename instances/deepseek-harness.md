@@ -121,7 +121,7 @@ for (const seq of nodes.slice(this.derivedNodes)) {
 3. 用 `ReactLoopAgent` 驱动，挂上工具族，跑一个多轮任务并观察 session 事件流。
 
 ::: info 【事实】
-来源：官方 github.com/deepseek-ai/deepseek-harness（everything-is-a-plugin、Cordis、developer preview、MIT）+ iceyao《DeepSeek Harness 源码深度解析》（上述 `ReactLoopAgent` / session 事件 / 工具流水线代码均引自该文对源码的拆解，已核对）。"凸显 harness+loop"是本体系的结构化定位（【推断】）。
+来源：官方 [github.com/deepseek-ai/deepseek-harness](https://github.com/deepseek-ai/deepseek-harness)（everything-is-a-plugin、Cordis、developer preview、MIT）+ [iceyao《DeepSeek Harness 源码深度解析》](https://www.iceyao.com.cn/post/2026-08-13-deepseek-harness%E6%BA%90%E7%A0%81%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90/)（[S7](/practice/sources)；上述 `ReactLoopAgent` / session 事件 / 工具流水线代码均引自该文对源码的拆解，已核对）+ [ChesterXue《deepseek harness 解析》](https://blog.csdn.net/ChesterXue/article/details/163745888)（[S6](/practice/sources)）。"凸显 harness+loop"是本体系的结构化定位（【推断】）。详见 [事实源清单](/practice/sources)。
 :::
 
 ## 小测验

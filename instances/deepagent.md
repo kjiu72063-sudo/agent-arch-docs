@@ -133,7 +133,7 @@ print(result["messages"][-1].content)
 **手动上下文管理**：agent 可调用 `add_context(content, key)` / `delete_context(key)` 跨轮次保留信息（写进 `context_manager`）。
 
 ::: info 【事实】
-来源：csdn 博客《LangChain deepagents》+ LangChain 官方 API。上述调用为示意实现；"凸显 graph+loop"是本体系的结构化定位（【推断】）。
+来源：[CSDN《LangChain deepagents 实践》](https://blog.csdn.net/weixin_44733966/article/details/156938858)（[S10](/practice/sources)）+ [LangChain 官方 API 文档](https://docs.langchain.com/oss/python/deepagents/overview)。上述调用为 **【示意实现】**（依来源归纳，非原文逐字复制，签名以官方为准）；"凸显 graph+loop"是本体系的结构化定位（【推断】）。详见 [事实源清单](/practice/sources)。
 :::
 
 ## 小测验

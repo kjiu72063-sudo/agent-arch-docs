@@ -18,7 +18,7 @@ title: 4-2 loop 设计决策与验证
 
 ## 决策一：Open vs Closed Loop（先探路，再固化）
 
-cnblogs 给出两条形态与一条实践铁律（【事实】）：
+[cnblogs《Loop Engineering 完全指南》](https://www.cnblogs.com/xiaobaiysf/p/21964451)（[S2](/practice/sources)）给出两条形态与一条实践铁律（【事实】）：
 
 | 形态 | 特点 | 适用 | 代价 |
 |---|---|---|---|

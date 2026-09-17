@@ -133,7 +133,7 @@ print(f"done: iterations={iterations}, cost={cost}, goal_met={goal_is_met()}")
 
 单步工具失败**不整轮崩溃**——重试或降级（如失败后改用更稳的备用工具/更简单的方案），并更新上下文后继续。
 
-## 三个完整实战案例（均出自 cnblogs《Loop Engineering 完全指南》，【事实】）
+## 三个完整实战案例（【事实】，出自 [cnblogs《Loop Engineering 完全指南》](https://www.cnblogs.com/xiaobaiysf/p/21964451) · [S2](/practice/sources)）
 
 ### 案例 A · 夜间自动修 Bug（Claude Code 实现）
 

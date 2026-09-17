@@ -88,7 +88,7 @@ assert run_eval("v2") >= run_eval("v1"), "prompt 改动造成回归，拒绝合�
 > **评估集就是 prompt 的测试套件**：有了它，"改 prompt"从玄学变成有红线的工程动作。这直接呼应 [04 loop 的 Verifier](/concepts/loop/design)——**独立、可量化、可回归**。
 
 ::: info 【事实·直译归纳】
-六条策略名称为 OpenAI 提示工程指南内容的直译归纳；该官方页本次抓取被 403、正文未直读，另参考 DeepLearning.AI 课程。详见 [事实源](/practice/compare)。
+六条策略名称为 OpenAI 提示工程指南内容的直译归纳（[G2](/practice/sources)，**该官方页抓取被 403、正文未直读**），另参考 DeepLearning.AI 课程（[G3](/practice/sources)）。详见 [事实源清单](/practice/sources)。
 :::
 
 ## 小测验

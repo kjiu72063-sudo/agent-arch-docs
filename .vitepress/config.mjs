@@ -119,6 +119,7 @@ export default withMermaid({
         text: 'Track C · 复刻实战',
         collapsed: true,
         items: [
+          { text: '事实源清单', link: '/practice/sources' },
           { text: '统一对比矩阵', link: '/practice/compare' },
           { text: '学习路径', link: '/practice/path' },
           { text: '掌握自检', link: '/practice/selfcheck' },
