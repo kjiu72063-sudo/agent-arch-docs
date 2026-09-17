@@ -132,6 +132,17 @@ print(result["messages"][-1].content)
 
 **手动上下文管理**：agent 可调用 `add_context(content, key)` / `delete_context(key)` 跨轮次保留信息（写进 `context_manager`）。
 
+### 上下文策略：它属于哪一类
+
+DeepAgent 同时提供两条路径，恰好是 [2-2 决策三](/concepts/context/design) 中两种策略的分工示范：
+
+| 机制 | 做法 | 对应策略 | 风险 |
+|---|---|---|---|
+| `add_context(content, key)` / `delete_context(key)` | 显式把**不可再生信息**（约束、决策、接口约定）以 key 存进 `context_manager`，**不进摘要** | **手动 DSE**（结构化保留、可断言） | 需人工判断"什么该留"；漏了没人提醒 |
+| `ContextSummarizationMiddleware(max_messages=30)` | 超阈值时对旧消息**分组生成摘要**，以 `SystemMessage` 替换 | **LLM 摘要**（纯摘要，**无残余剔除**） | 默认形态接近 `llm_only`——只挂它、不用 `add_context`，约束类信息会被摘要掉（见 [2-2 坑③](/concepts/context/pitfalls)） |
+
+> **正确用法**：`add_context` 先（把约束/决策/接口约定以 key 钉住）→ `SummarizationMiddleware` 只处理剩下的过程性消息。这正是 `hybrid` 的**手工版**：**先抽结构、再凝练残余**；颠倒过来（只靠摘要）就会踩坑③——两件事的默认值谁先谁后，直接决定约束保不保得住。
+
 ### 中间件链配置（+1 真实代码块）
 
 多个中间件按注册顺序**环绕**每次模型调用（onion 模型），顺序决定横切行为：

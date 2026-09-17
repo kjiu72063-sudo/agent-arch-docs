@@ -58,6 +58,25 @@ summary = llm(f"总结过程性对话：{procedural_history}")
 compacted = keep + [summary]
 ```
 
+### 坑④ 让模型决定"要不要摘要" —— 决策本身不能不确定
+
+```python
+# ✕ 反模式：把"这段要不要摘要"交给模型判断
+if llm("这段历史需要摘要吗？", history) == "是":       # 决策不确定 → 预算不可算
+    compacted = llm(f"总结：{history}")
+
+# ✓ 正解：策略写进静态配置（分派表），运行时零决策；DSE 先抽结构，LLM 只凝练残余
+strategy = CONFIG["context"]["strategy"]                # "hybrid" | "dse_only" | "llm_only"
+signals  = dse_extract(history)                         # 确定性，0 次 LLM 调用
+residual = drop_extracted(history, signals)             # 残余才进 LLM
+compacted = ([signals, llm(f"凝练叙述：{residual}")]
+             if residual.strip() else [signals])
+```
+
+> 三条代价：**元级自相矛盾**（确定性提取的开关由不确定过程决定）、**不可预算**（预算控制器需要事前配额，决策不确定则成本只能在跑完后才知）、**失败不可复现**（这次丢关键信息、下次同样的输入未必丢，线上无法定位）。
+
+> 正确的分派方式是**声明式静态表**（`ROUTING`，可 review / 可单测 / 可 diff），判据是"能否写出 assert"——完整论证、三模式实现与顺序契约见 [2-2 决策三](/concepts/context/design)。
+
 ## 产物化三档自检
 
 > 对齐 Track 01 的写法：每档对应**可提交的产物**，不是"感觉会了"。
