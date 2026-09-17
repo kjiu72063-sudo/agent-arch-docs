@@ -8,6 +8,8 @@ export default withMermaid({
   title: 'Agent 架构知识体系',
   description: '从会用到会造 Agent · 概念主轴 + 实例专项 + 复刻实战',
   lang: 'zh-CN',
+  // 部署到 GitHub Pages 时站点位于子路径 /agent-arch-docs/；本地开发仍用根路径
+  base: process.env.GITHUB_ACTIONS ? '/agent-arch-docs/' : '/',
   lastUpdated: true,
   cleanUrls: true,
 
