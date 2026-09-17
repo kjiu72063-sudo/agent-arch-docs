@@ -134,6 +134,139 @@ flowchart TD
 > 来源：[sawzhang/deep-dive-claude-code](https://github.com/sawzhang/deep-dive-claude-code)（[S4](/practice/sources)，multi-part 结构已确认，25 章 + 2 附录；许可证按 MIT 处理）；配置格式另参 [Anthropic 官方文档](https://docs.anthropic.com/en/docs/claude-code)（覆盖：Claude Code 实例 · 1-6）。上述配置为**依据来源归纳的示意实现**；"凸显 harness+loop"是本体系的结构化定位（【推断】）。
 :::
 
+## 端到端 trace：一次"修 Bug"任务的完整生命周期
+
+把前面各层串起来看——**同一个任务，各层在什么时候介入**：
+
+```mermaid
+sequenceDiagram
+  participant U as 用户
+  participant H as Harness
+  participant M as 模型
+  participant T as 工具/沙箱
+  U->>H: "修复登录接口 500 错误"
+  H->>M: system prompt + CLAUDE.md（目录指针）+ 工具说明
+  M->>H: Read(login.py)  ← 只读，直接放行
+  H->>T: 执行并回灌内容
+  M->>H: Run(pytest)  ← 白名单命令，放行
+  H->>M: 测试输出（失败信息即上下文）
+  M->>H: Edit(login.py)  ← 写操作，触发审批
+  H->>T: 落盘
+  T-->>H: PostToolUse hook → ruff → exit 2
+  H->>M: 把 ruff 报错作为 tool_result 回灌（错误信息即 Prompt）
+  M->>H: 据报错再 Edit
+  H->>T: 再次 hook → 通过
+  M->>H: 会话变长 → 触发压缩（摘要 + 保留约束）
+  H->>U: 结论 + diff
+```
+
+**关键观察**：任务被拆成 **9 个可观察节点**，其中 **4 个是 harness 主动介入点**（权限放行/审批、hook 阻断、错误回灌、会话压缩）。这就是"驾驭"的含义——**模型负责决策，harness 负责每个节点的把关**。
+
+## 源码级深挖：三处关键实现
+
+### ① Hook 生命周期（四类事件）
+
+Hook 是 Claude Code 把"纪律"从提示词变成**可执行代码**的机制。四类事件覆盖了会话的关键节点：
+
+| 事件 | 触发时机 | 典型用途 | 阻断方式 |
+|---|---|---|---|
+| `UserPromptSubmit` | 用户提交 prompt 后、送模型前 | 注入上下文、拦截违规提问 | `exit 2` + stderr |
+| `PreToolUse` | 工具执行**前** | 参数校验、危险命令拦截 | `exit 2` 阻断调用 |
+| `PostToolUse` | 工具执行**后** | 格式化、lint、测试 | `exit 2` 把报错回灌模型 |
+| `Stop` | 模型准备结束回答时 | 强制"没跑测试不许停" | `exit 2` 要求继续 |
+
+```json
+// 【示意实现】四类 hook 的完整配置
+{
+  "hooks": {
+    "PreToolUse": [
+      { "matcher": "Bash",
+        "hooks": [{ "type": "command", "command": "python .claude/hooks/guard_bash.py" }] }
+    ],
+    "PostToolUse": [
+      { "matcher": "Edit|Write",
+        "hooks": [{ "type": "command", "command": "uv run ruff check --fix $CLAUDE_FILE_PATHS" }] }
+    ],
+    "Stop": [
+      { "hooks": [{ "type": "command", "command": "uv run pytest -q || exit 2" }] }
+    ]
+  }
+}
+```
+> **`Stop` hook 是最容易被忽略、但价值最高的一环**：它把"改完就跑测试"从模型的自觉变成**会话结束的硬门禁**——测试没过，模型不许停。
+
+```python
+# 【示意实现】PreToolUse 守卫脚本：危险命令直接阻断
+import json, sys, re
+
+event = json.load(sys.stdin)                    # hook 从 stdin 拿事件
+cmd = event.get("tool_input", {}).get("command", "")
+BLOCK = [r"\brm\s+-rf\s+/", r"\bgit\s+push\b", r"curl\s+.*\|\s*sh"]
+if any(re.search(p, cmd) for p in BLOCK):
+    print(f"❌ 命令被拦截：{cmd}\n✅ FIX: 危险命令需人工执行。\n📖 See: docs/conventions/safety.md", file=sys.stderr)
+    sys.exit(2)                                  # exit 2 = 阻断并把 stderr 回灌模型
+sys.exit(0)
+```
+
+### ② 六层权限的判定顺序
+
+权限不是"一次开关"，而是**从宽到严逐层收敛**：
+
+```python
+# 【示意实现】权限判定：六层递进，任一层否决即拦
+def permit(tool_name, args, mode):
+    # ① 全局默认模式（只读 → 可写 → 全权）
+    if mode == "read-only" and tool_name in WRITE_TOOLS:
+        return False, "read-only 模式禁止写操作"
+    # ② 组织级策略（企业管控，优先级高于本地）
+    if violates_org_policy(tool_name, args):
+        return False, "违反组织策略"
+    # ③ 项目级 deny（黑名单，最高优先级否决）
+    if matches_any(args, settings["permissions"]["deny"]):
+        return False, f"命中 deny 规则"
+    # ④ 项目级 allow（白名单，命中即放行）
+    if matches_any(args, settings["permissions"]["allow"]):
+        return True, "命中 allow 规则"
+    # ⑤ require_approval：交人工确认
+    if matches_any(args, settings["permissions"].get("require_approval", [])):
+        return ask_human(tool_name, args), "等待人工审批"
+    # ⑥ 兜底：fail-closed（未声明即拒绝）
+    return False, "未授权动作，默认拒绝"
+```
+> 注意第 ⑥ 层：**未命中 allow 且未命中 deny 时是"拒绝"而非"允许"**——这正是 [03 harness 的 fail-closed](/concepts/harness/mechanism) 在真实产品里的落地。
+
+### ③ 会话压缩：保真优先于压缩
+
+长会话触发压缩时，最容易丢的是**约束类信息**（一旦丢了，后续轮次就开始违背边界）：
+
+```python
+# 【示意实现】压缩策略：不可再生信息原文保留
+KEEP_KINDS = {"constraint", "interface", "decision", "user_instruction"}
+
+def compact(messages, budget):
+    if estimate(messages) <= budget:
+        return messages
+    keep = [m for m in messages if m.kind in KEEP_KINDS]      # 不可再生 → 原文保留
+    proc = [m for m in messages if m.kind not in KEEP_KINDS]  # 过程性 → 摘要
+    summary = llm_summarize(proc, keep_hint=[m.text for m in keep])
+    return keep + [summary]
+```
+> 这与 [02 context 的决策三 DSE](/concepts/context/design) 是同一思路：**能结构化保留的绝不摘要**。
+
+## 深入问答：为什么这样设计
+
+**Q1：hook 为什么用 `exit 2` 而不是 `exit 1`？**
+约定区分了"报错"与"阻断"：`exit 1` 只记录不阻断，`exit 2` 才是**阻断并把 stderr 回灌模型**。这个区分让 hook 能表达两种语义——"提醒一下"与"不许继续"。
+
+**Q2：权限为什么要"六层"而不是一层？**
+因为规则的**来源优先级不同**：组织策略 > 项目 `deny` > 项目 `allow` > 审批 > 兜底。单层无法表达优先级，也无法同时满足"企业统一管控"与"项目自主定制"两个需求。
+
+**Q3：会话压缩为什么不能被"向量检索"替代？**
+两者解决不同问题：**检索解决"找相关"，压缩解决"装得下"**。关键差别是约束类信息必须**在场**（每轮都在上下文里），而不是"需要时能检索到"——因为模型不知道"自己该检索什么"。
+
+**Q4：为什么测试不能交给模型自评？**
+生成者对自己天然宽容（[04 loop 的 Maker/Checker 必须分离](/concepts/loop/mechanism)）。机械化测试是**独立裁判**：它不看理由，只看退出码。这也是 hook 存在的意义——**把"应该跑测试"从自觉变成门禁**。
+
 ## 局限与不适用场景
 
 | 局限 | 说明 | 何时别用 |

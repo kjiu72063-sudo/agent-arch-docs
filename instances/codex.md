@@ -114,6 +114,111 @@ def codex_loop(task, repo, max_iter=15):
 > 来源：[smartloli《Codex 剖析》](https://www.cnblogs.com/smartloli/p/20684447)（[S5](/practice/sources)）+ [openai/codex](https://github.com/openai/codex)（官方仓库，配置键名与沙箱语义以其为准）（覆盖：Codex 实例 · 3-1）。上述配置为**依据来源归纳的示意实现（【示意实现】）**；"凸显 harness+loop"是本体系的结构化定位（【推断】）。
 :::
 
+## 端到端 trace：一次"改代码并跑通测试"的生命周期
+
+```mermaid
+sequenceDiagram
+  participant U as 用户
+  participant H as Harness(Codex)
+  participant S as Sandbox
+  participant M as 模型
+  U->>H: "把 for 改成 map，保持行为不变"
+  H->>M: AGENTS.md 规则 + 任务（注入 context）
+  M->>H: 请求 read(utils.py)
+  H->>S: workspace-write 下只读放行
+  M->>H: 请求 edit(utils.py)
+  H->>U: approval_policy=on-request → 请求审批
+  U-->>H: 批准
+  H->>S: 在写白名单内落盘
+  M->>H: 请求 shell: cargo test
+  H->>S: 白名单命令放行（禁网）
+  S-->>M: 测试输出回灌
+  alt 测试失败
+    M->>M: 据报错定位 → 再 edit（反馈重试）
+  else 测试通过
+    H->>U: 输出 diff + 结论
+  end
+```
+
+**与 Claude Code 的关键差异**：Codex 把把关重心放在 **沙箱隔离 + 审批**（执行环境层），Claude Code 放在 **hook 门禁 + 六层权限**（工程纪律层）。**同一目标，两种取舍。**
+
+## 源码级深挖：三处关键实现
+
+### ① 审批策略三态：自动化与安全的旋钮
+
+`approval_policy` 决定"哪些动作需要人点头"，三种取值的实际行为差异很大：
+
+| 取值 | 行为 | 适用 | 风险 |
+|---|---|---|---|
+| `on-request` | 模型判断需要时才请求审批 | 生产 / 团队协作 | 依赖模型自判（可能少问） |
+| `on-failure` | 先执行，**失败后**才请求审批 | 本地开发、快速迭代 | 失败前的副作用已发生 |
+| `never` | 从不请求审批，全部自动执行 | 完全可信的隔离环境 | ⚠️ 危险动作无人拦 |
+
+```toml
+# ~/.codex/config.toml
+approval_policy = "on-request"      # 推荐生产用
+
+# 进阶：按命令模式细粒度配置审批（危险命令强制问人）
+[approval_policy.on_request]
+dangerous_commands = ["git push", "rm -rf", "docker", "kubectl"]
+```
+> 选择逻辑：**沙箱越松，审批就要越严**。若 `sandbox_mode = "danger-full-access"`，`approval_policy` 必须收紧到 `on-request`，否则等于无防护。
+
+### ② 沙箱实现：三平台不同后端
+
+`sandbox_mode` 是**策略**，具体隔离能力由**平台后端**提供（能力并不对等）：
+
+| 平台 | 隔离机制 | 能力边界 |
+|---|---|---|
+| macOS | `seatbelt`（Sandbox.framework） | 成熟：可限文件/网络/进程 |
+| Linux | `landlock` + `seccomp` | 较强：需内核支持（5.13+） |
+| Windows | 受限令牌 / 作业对象 | **较弱**：隔离粒度粗，能力受限 |
+
+```python
+# 【示意实现】启动前探测沙箱后端能力，能力不足即降级或拒绝
+def resolve_sandbox(mode):
+    backend = detect_backend()            # seatbelt / landlock / windows-job
+    caps = BACKEND_CAPS[backend]          # 该后端支持哪些限制
+    need = ["fs_write", "network_block"]
+    if mode == "workspace-write" and not caps.get("fs_write"):
+        raise RuntimeError("SANDBOX_UNSUPPORTED: 当前平台不支持写隔离，拒绝执行")  # fail-closed
+    return Sandbox(backend, mode)
+```
+> **重要提醒**：跨平台时不要假设隔离能力一致。**能力不足应 fail-closed，而不是"降级裸跑"**（见 [3-1 fail-closed](/concepts/harness/mechanism)）。
+
+### ③ 命令输出治理：防上下文污染
+
+命令输出（尤其测试/构建）极易灌满上下文——这是 [02 context](/concepts/context/mechanism) 在 harness 侧的落点：
+
+```python
+# 【示意实现】输出治理三招（参考 Anthropic C 编译器的做法）
+def run_command(cmd, log_path="/tmp/app.log"):
+    with open(log_path, "w") as f:        # ① 全量写文件，不塞进上下文
+        proc = subprocess.run(cmd, stdout=f, stderr=subprocess.STDOUT)
+    # ② 只回灌"grep 友好"的摘要行：单行、带前缀、可机器解析
+    matched = grep(log_path, r"^(ERROR|FAIL|error\[E\d+\]):")
+    return {
+        "exit_code": proc.returncode,
+        "summary": matched[:20],          # ③ 预计算聚合，不输出原始数据
+        "full_log": log_path,             # 给模型一个 locator，需要时再读
+    }
+```
+> 三招对应教材里 Anthropic 的**上下文窗口污染缓解**：**最小化控制台输出、日志写文件、grep 友好格式、预计算聚合**。
+
+## 深入问答：为什么这样设计
+
+**Q1：为什么网络默认禁用？**
+网络是**最大的外泄面**（凭据、内网数据），同时也会引入不确定性——Agent 联网拉依赖可能导致版本漂移，进而破坏构建。默认禁用是"最小权限"原则的直接体现。
+
+**Q2：`approval_policy` 为什么默认 `on-request` 而不是 `never`？**
+`never` 等于**没有审批层**——危险动作无人拦。`on-request` 保留了人工闸门，同时避免每个动作都打扰人。默认值的选择本身就是"安全优先"的立场。
+
+**Q3：沙箱三档为什么不直接给 `danger-full-access`？**
+隔离强度与干活便利性成反比。**默认给最小权限、需要时显式放开**（fail-safe 默认），而不是给全权再靠自觉收敛。
+
+**Q4：`AGENTS.md` 为什么必须限制行数？**
+每一行都占 token 预算。过长会**挤掉任务本身的空间**，表现就是"Agent 开始忽略部分规则"——它**不是不听话，而是没地方看了**（见 [3-3 坑①](/concepts/harness/pitfalls)）。
+
 ## 局限与不适用场景
 
 | 局限 | 说明 | 何时别用 |

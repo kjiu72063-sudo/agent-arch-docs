@@ -139,6 +139,126 @@ def run_turn(user_input, tools, max_iter=10):
 > 来源：[luyao618/Hermes-Source-Code-Study](https://github.com/luyao618/Hermes-Source-Code-Study)（[S3](/practice/sources)，指向 NousResearch/hermes-agent）（覆盖：Hermes 实例）。上述代码为**依据来源归纳的示意实现（【示意实现】）**，具体接口以官方 README / 源码为准；"凸显 harness+loop"是本体系的结构化定位（【推断】）。
 :::
 
+## 端到端 trace：一次带工具调用的对话生命周期
+
+```mermaid
+sequenceDiagram
+  participant U as 用户
+  participant P as Prompt 模块
+  participant L as 对话循环
+  participant R as 工具注册表
+  participant M as 记忆
+  U->>P: 输入
+  P->>P: 拼装 system prompt（人设+工具+纪律）
+  P->>L: messages = [system, user]
+  L->>M: 读取相关记忆（按需）
+  M-->>L: 注入历史偏好/约束
+  L->>L: llm.chat(messages, tools)
+  loop 工具往返
+    L->>R: registry.invoke(call)
+    R->>R: 参数校验 → 权限判定（fail-closed）
+    R-->>L: 结果回填 messages
+    L->>L: 再请求模型
+  end
+  L->>M: 写回本次产生的重要事实
+  L->>U: 最终回复
+```
+
+**三个可观察点**：① **prompt 是拼装出来的**（不是硬编码一段）；② **工具调用前必过注册表**（校验 + 权限）；③ **记忆是显式的读/写动作**（不是自动摘要）。
+
+## 源码级深挖：三处关键实现
+
+### ① 多模型适配层：把 Provider 差异关在门外
+
+框架最大的现实约束是"模型会换"。适配层的价值在于**上层代码不感知 Provider 差异**：
+
+```python
+# 【示意实现】统一适配接口：新增 Provider 不改上层
+from abc import ABC, abstractmethod
+
+class BaseProvider(ABC):
+    @abstractmethod
+    def chat(self, messages, tools=None) -> "Response": ...
+    @abstractmethod
+    def count_tokens(self, text: str) -> int: ...
+
+class OpenAIProvider(BaseProvider):
+    def chat(self, messages, tools=None):
+        return self.client.chat.completions.create(
+            model=self.model, messages=to_openai(messages),
+            tools=to_openai_tools(tools) if tools else None,
+        )
+    def count_tokens(self, text): return len(tiktoken_encode(text))
+
+class LocalProvider(BaseProvider):
+    def chat(self, messages, tools=None):
+        return self.client.generate(prompt=flatten(messages))   # 本地模型可能不支持 tools
+    def count_tokens(self, text): return len(self.tokenizer.encode(text))
+
+# 上层只依赖抽象——换 Provider 不改业务代码
+provider: BaseProvider = make_provider(cfg.provider)
+```
+> 要点：**工具调用能力的差异也在适配层归一**（本地模型可能不支持 native tool calling，需降级为提示词模拟）。这与 [03 harness 的"环境抽象"](/concepts/harness/mechanism) 同源。
+
+### ② 记忆读写：显式而非自动
+
+Hermes 把记忆当作**显式动作**——什么时候读、什么时候写，由流程决定：
+
+```python
+# 【示意实现】记忆读写接口：显式调用，可控、可审计
+class Memory:
+    def __init__(self, store):
+        self.store = store                      # 后端可为文件 / 向量库 / DB
+
+    def read(self, query: str, k: int = 5) -> list[str]:
+        """会话开始时按需检索（不是把全部历史塞进去）。"""
+        return self.store.search(query, k=k)
+
+    def write(self, fact: str, *, kind: str, source: str) -> None:
+        """会话中/结束时写入重要事实，带类型与来源便于后续治理。"""
+        assert kind in {"constraint", "preference", "decision", "fact"}
+        self.store.append({"text": fact, "kind": kind, "source": source,
+                           "ts": now_iso()})
+```
+> 注意 `kind` 字段——**约束类记忆必须可被识别**，因为它们在压缩时不可丢弃（见 [02 context 决策三](/concepts/context/design)）。
+
+### ③ System Prompt 工程模块：可分可合
+
+真实的 system prompt 不是一段字符串，而是**可组合的模块**：
+
+```python
+# 【示意实现】按需拼装：不同场景注入不同段
+SECTIONS = {
+    "identity": "你是 Hermes 助手，负责…",
+    "tools":    "可用工具：{tool_list}",          # 占位符由注册表填充
+    "policy":   "只读操作可直接执行；写操作需确认。",
+    "memory":   "已知用户偏好：{prefs}",          # 由记忆层注入
+}
+
+def build_system_prompt(*, use_memory=False, tool_list=None, prefs=None):
+    parts = [SECTIONS["identity"], SECTIONS["policy"]]
+    if tool_list:
+        parts.insert(1, SECTIONS["tools"].format(tool_list=tool_list))
+    if use_memory and prefs:
+        parts.append(SECTIONS["memory"].format(prefs=prefs))
+    return "\n\n".join(parts)                     # 顺序即优先级
+```
+> 这一节直接对应 [01 prompt 的分段拼装](/concepts/prompt/basics)：**顺序 = 优先级，稳定段在前、可变段在后**。
+
+## 深入问答：为什么这样设计
+
+**Q1：为什么要有 Provider 适配层？**
+因为**模型一定会换**（成本、合规、能力演进）。适配层把差异关在门外——上层业务代码只依赖抽象接口，换 Provider 不改业务逻辑。这与 [03 harness 的"环境抽象"](/concepts/harness/mechanism) 同源。
+
+**Q2：记忆为什么是显式读写，而不是自动摘要？**
+自动摘要**不可控、不可审计、不可测试**：你无法断言"它记住了什么"。显式动作可以写测试、可以版本化、可以在出错时定位（呼应 [02 DSE 的可断言性](/concepts/context/design)）。
+
+**Q3：system prompt 为什么要模块化？**
+因为**不同场景需要的段落不同**（是否注入记忆、是否列工具）。硬编码一段会强制所有场景带全量内容，与"上下文不多不少"的原则冲突。
+
+**Q4：权限为什么必须 fail-closed？**
+若"未声明即放行"，新增工具**忘了配权限就会裸奔**——且这种漏洞在测试里通常发现不了。fail-closed 把默认值设成安全的一侧（未登记即拒绝）。
+
 ## 局限与不适用场景
 
 | 局限 | 说明 | 何时别用 |

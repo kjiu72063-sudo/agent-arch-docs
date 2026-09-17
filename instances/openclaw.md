@@ -132,6 +132,123 @@ export const networkPlugin: Plugin = {
 > 来源：[openclaw-docs](https://openclaw-docs.dx3n.cn/)（[S1](/practice/sources)，本站对标对象）（覆盖：OpenClaw 实例 · 06）。上述配置/接口为**依据官方文档的示意实现（【示意实现】）**；"凸显 harness/Gateway"是本体系的结构化定位（【推断】）。
 :::
 
+## 端到端 trace：一条跨通道消息的生命周期
+
+```mermaid
+sequenceDiagram
+  participant W as 微信用户
+  participant C as ChannelConnector
+  participant G as Gateway 核心
+  participant S as 会话存储
+  participant P as 插件(network/tools)
+  participant A as Agent
+  W->>C: 发消息
+  C->>C: 归一化为 IncomingMessage
+  C->>G: handler(msg) + sessionKey
+  G->>S: 按 sessionKey 取会话历史
+  S-->>G: 历史 messages
+  G->>P: 按需挂载插件能力
+  G->>A: 组装上下文并执行
+  A-->>G: 回复
+  G->>S: 写回会话（更新历史）
+  G->>C: 出站 send(to, text)
+  C->>W: 推送到微信
+```
+
+**三个可观察点**：① **通道只做翻译**（归一化进、推送出），不含业务；② **`sessionKey` 决定会话归属**（隔离的唯一开关）；③ **核心不感知通道类型**（新增通道不改核心）。
+
+## 源码级深挖：三处关键实现
+
+### ① 会话键设计：隔离的唯一开关
+
+`sessionKey` 的构成直接决定"会不会串会话"。四种设计及其后果：
+
+| sessionKey 设计 | 隔离粒度 | 后果 |
+|---|---|---|
+| `userId` | 用户级 | ⚠️ **私聊与群聊共用会话**，上下文互相污染 |
+| `channel:chatId` | 会话级 | ✅ 正确：群聊/私聊各自独立 |
+| `channel:chatId:userId` | 会话×用户级 | 群聊中每人独立（适合"私人助理"） |
+| `channel:chatId:threadId` | 话题级 | 群聊中每个话题独立（适合"话题助手"） |
+
+```typescript
+// 【示意实现】sessionKey 构造：按产品语义选择隔离粒度
+export function buildSessionKey(msg: IncomingMessage, scope: "chat" | "user" | "thread") {
+  const base = `${msg.channelId}:${msg.chatId}`;
+  switch (scope) {
+    case "chat":   return base;                              // 整个会话共享
+    case "user":   return `${base}:${msg.userId}`;           // 每人独立
+    case "thread": return `${base}:${msg.threadId ?? "main"}`; // 每话题独立
+  }
+}
+```
+> **反模式**：`sessionKey` 只用 `userId`——群里所有人共享一个上下文，A 的私事会漏给 B（见本页"常见坑 ①"）。
+
+### ② Gateway 启动：插件的装配顺序
+
+插件之间可能有依赖，**装配顺序错会导致运行期报错**：
+
+```typescript
+// 【示意实现】Gateway 启动：按依赖拓扑序装配，失败即中止（fail-closed）
+async function boot(config: GatewayConfig) {
+  const core = new GatewayCore(config.gateway);
+  const plugins: Plugin[] = [];
+
+  // ① 先装配能力型插件（被其他插件依赖）
+  for (const name of ["network", "tools"]) {
+    const p = await loadPlugin(name);
+    if (!p) throw new Error(`PLUGIN_LOAD_FAILED: ${name}`);   // 缺插件即失败，不静默跳过
+    await p.setup(core);
+    plugins.push(p);
+  }
+  // ② 再挂载通道（依赖 core + 能力插件就绪）
+  for (const ch of config.gateway.channels.filter(c => c.enabled)) {
+    core.registerConnector(await loadConnector(ch.type));
+  }
+  // ③ 注册优雅关闭：与 setup 严格对称
+  process.on("SIGTERM", async () => {
+    for (const p of plugins.reverse()) await p.teardown();    // 逆序撤销
+  });
+  await core.listen(config.gateway.port);
+}
+```
+> **对称性是硬要求**：`setup` 顺序与 `teardown` 顺序相反，漏掉 `teardown` 会导致热重载后**工具重复注册**。
+
+### ③ 会话存储与恢复：多通道的连续性
+
+```typescript
+// 【示意实现】会话存储：按 sessionKey 存取，支持恢复
+interface SessionStore {
+  load(key: string): Promise<Message[]>;
+  append(key: string, msg: Message): Promise<void>;
+  compact(key: string, keep: number): Promise<void>;   // 保留最近 N 轮
+}
+
+export async function handle(gateway: GatewayCore, msg: IncomingMessage) {
+  const key = buildSessionKey(msg, "chat");
+  const history = await gateway.store.load(key);        // ① 恢复历史
+  const limited = trimToBudget(history, gateway.budget); // ② 按预算裁剪（有界上下文）
+  const reply = await gateway.agent.run([...limited, toUser(msg)]);  // ③ 执行
+  await gateway.store.append(key, toUser(msg));          // ④ 落库（先记后回）
+  await gateway.store.append(key, toAssistant(reply));
+  return reply;
+}
+```
+> 注意 ③ 之前先做了 **预算裁剪**——多通道下会话可能无限增长，**每条通道都必须有界**（见 [02 context 预算控制](/concepts/context/mechanism)）。
+
+## 深入问答：为什么这样设计
+
+**Q1：连接器为什么不能写业务逻辑？**
+连接器的职责只有一个：**消息格式翻译**（通道格式 ↔ 统一格式）。把业务塞进去会让核心与具体通道重新耦合——那就退回了"每加一个通道就改一遍核心"的老路，Gateway 失去了存在意义。
+
+**Q2：`sessionKey` 为什么必须包含 `chatId`？**
+只用 `userId` 会让**私聊与群聊共用同一会话**：你在群里聊的内容会出现在私聊回复里。`chatId` 是区分"会话容器"的最小单位，缺它就没有隔离。
+
+**Q3：插件为什么必须实现 `teardown`？**
+插件是**热插拔**的。若卸载时不撤销注册，重新加载就会**重复注册**（模型看到两份工具、可能执行两次）。`setup`/`teardown` 严格对称是插件系统的基本契约。
+
+**Q4：为什么在交给 Agent 之前先裁剪会话？**
+多通道场景下会话会**无限增长**（每个群、每个用户都在积累）。必须在进 Agent 前按预算裁剪，否则某条通道迟早撑爆上下文——**每条通道都要有界**（见 [02 预算控制](/concepts/context/mechanism)）。
+
 ## 局限与不适用场景
 
 | 局限 | 说明 | 何时别用 |

@@ -148,6 +148,127 @@ export default class TypingService extends Service {
 来源：官方 [github.com/deepseek-ai/deepseek-harness](https://github.com/deepseek-ai/deepseek-harness)（everything-is-a-plugin、Cordis、developer preview、MIT）+ [iceyao《DeepSeek Harness 源码深度解析》](https://www.iceyao.com.cn/post/2026-08-13-deepseek-harness%E6%BA%90%E7%A0%81%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90/)（[S7](/practice/sources)；上述 `ReactLoopAgent` / session 事件 / 工具流水线代码均引自该文对源码的拆解，已核对）+ [ChesterXue《deepseek harness 解析》](https://blog.csdn.net/ChesterXue/article/details/163745888)（[S6](/practice/sources)）。"凸显 harness+loop"是本体系的结构化定位（【推断】）。详见 [事实源清单](/practice/sources)。
 :::
 
+## 端到端 trace：一次多轮任务的生命周期
+
+```mermaid
+sequenceDiagram
+  participant U as 用户
+  participant C as Cordis 容器
+  participant A as ReactLoopAgent
+  participant T as 工具流水线
+  participant S as session(事件日志)
+  U->>C: 输入（平台层插件收）
+  C->>S: append user/message
+  A->>S: append turn/start
+  loop 每个 step
+    A->>T: tools/pre-execute（审批/guard 把关）
+    T-->>A: 放行 or 拒绝
+    A->>S: append step/start
+    A->>A: 模型请求 + 执行工具
+    T->>S: tools/post-execute → spill 超大结果
+    A->>S: append step/end
+  end
+  A->>S: append turn/end
+  S-->>U: deriveMessages() 投影出模型可见历史 → 回复
+```
+
+**三个可观察点**：① **装配在启动期**（插件树按依赖序注入），运行期没有装配开销；② **每一拍先写日志再执行**（"模型可见即已记录"不变量）；③ **模型历史是从日志投影出来的**，不是另存一份。
+
+## 源码级深挖：三处关键实现
+
+### ① 四类插件单元：Cordis 的"一切皆插件"
+
+Cordis 把框架能力拆成四类可插拔单元，理解它们就理解了整个扩展模型：
+
+```ts
+// 【示意实现】四类插件单元示例
+import { Context, Service, Event, Effect } from '@cordisjs/core'
+
+// ① Context：作用域容器，插件挂在某个 Context 上
+const ctx = new Context()
+
+// ② Service：可注入的能力（其他插件用 inject 声明依赖）
+class ApprovalService extends Service {
+  static [Service.provide] = 'approval'
+  async ask(tool: string, args: unknown): Promise<boolean> {
+    return this.ctx.event.emit('approval/request', { tool, args })  // → ③
+  }
+}
+
+// ③ Event：事件总线（松耦合，插件间不直接依赖）
+ctx.on('approval/request', async ({ tool }, next) => {
+  if (isDangerous(tool)) return false          // 拦截危险工具
+  return next()
+})
+
+// ④ Effect：可撤销副作用（注册即生效、卸载即撤销）
+ctx.effect(() => {
+  const dispose = registerTool('read_file', readFileImpl)
+  return dispose                                // 返回撤销函数
+})
+```
+> **Effect 是"一切皆插件"能成立的关键**：它保证插件热插拔时**不留残余**（对应 [06 skill 的注册/卸载对称](/concepts/skill/pitfalls)）。
+
+### ② 工具流水线三阶段：把关点在源头
+
+```ts
+// 【示意实现】三阶段流水线（真实结构按 iceyao 源码解析）
+ctx.on('tools/pre-execute', async (exec, next) => {
+  const approved = await ctx.approval.ask(exec.name, exec.args)   // 审批服务在此询问
+  if (!approved) throw new ToolDeniedError(exec.name)             // → waterfall 中断
+  if (!guard.check(exec)) throw new GuardRejectedError(exec.name) // guard 在此拒绝
+  return next()
+}, { prepend: true })                                             // 最早执行
+
+ctx.on('tools/post-execute', async (result, next) => {
+  if (estimate(result) > SPILL_THRESHOLD) {                       // 超大结果 → spill
+    const key = await spillStore.put(result)                      // 全文落外部存储
+    result = { spilled: true, locator: key, preview: head(result, 20) }
+  }
+  return next()
+})
+```
+> 注意 `prepend: true`：**审批必须在最前面**，否则 guard 之后的插件可能已经产生副作用。
+
+### ③ spill：把"存全文"与"给模型看"分开
+
+spill 是应对超大结果的机制——**全文不丢，但上下文只放指针**：
+
+```ts
+// 【示意实现】spill 存储 + 配套的"取回"工具（缺一不可）
+class SpillStore {
+  async put(content: string): Promise<string> {
+    const key = `spill/${crypto.randomUUID()}`
+    await this.blob.write(key, content)              // 全文落外部存储
+    return key                                       // 只返回 locator
+  }
+  async get(key: string): Promise<string> {
+    return await this.blob.read(key)
+  }
+}
+
+// ⚠️ 关键：必须同时注册"按 key 取全文"的工具，否则信息永久丢失
+ctx.effect(() => registerTool('read_spilled', async ({ key, offset = 0, limit = 200 }) => {
+  const all = (await spillStore.get(key)).split('\n')
+  return all.slice(offset, offset + limit).join('\n')   // 支持分段取，避免二次灌满
+}))
+```
+> **这是 spill 最容易踩的坑**：只做"存"不做"取"，模型拿到 locator 却无从读取——信息等于丢弃（见本页"常见坑 ②"）。
+
+## 深入问答：为什么这样设计
+
+**Q1：`session` 为什么必须 append-only？**
+三个理由：**可回放**（重放历史定位问题）、**可审计**（谁在什么时候改了什么）、**可重放**（同一日志跑出同一结果）。一旦允许改历史，"模型看到的"与"记录的"就脱节了——出问题无法归因。
+
+**Q2：spill 为什么只往上下文放 locator 而不放正文？**
+因为**上下文是稀缺资源**。全文落外部存储，模型需要时按 key 分段取回。代价是多一次往返，收益是长任务不会因单个巨型输出而崩（正是 [02 的预算思想](/concepts/context/mechanism)）。
+
+**Q3：为什么用 `Effect` 而不是直接注册？**
+`Effect` 让副作用**可撤销**（返回 dispose 函数）。插件热插拔时若不留残余，重复注册会让模型看到重复工具、甚至执行两次。`Effect` 是"一切皆插件"能真正成立的前提。
+
+**Q4：审批为什么必须 `prepend: true`（最早执行）？**
+如果审批排在后面，**前面的事件处理器可能已经产生了副作用**（改文件、发请求），再拦就晚了。把关点必须在流水线**最前端**。
+
 ## 局限与不适用场景
 
 | 局限 | 说明 | 何时别用 |

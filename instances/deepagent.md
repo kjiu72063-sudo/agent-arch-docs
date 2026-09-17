@@ -190,6 +190,133 @@ app = g.compile(checkpointer=MemorySaver())   # 挂 checkpointer 可续跑
 来源：[CSDN《LangChain deepagents 实践》](https://blog.csdn.net/weixin_44733966/article/details/156938858)（[S10](/practice/sources)）+ [LangChain 官方 API 文档](https://docs.langchain.com/oss/python/deepagents/overview)。上述调用为 **【示意实现】**（依来源归纳，非原文逐字复制，签名以官方为准）；"凸显 graph+loop"是本体系的结构化定位（【推断】）。详见 [事实源清单](/practice/sources)。
 :::
 
+## 端到端 trace：一次"重构 + 跑通测试"的生命周期
+
+```mermaid
+sequenceDiagram
+  participant U as 用户
+  participant G as 主 Agent(图)
+  participant M as 中间件链
+  participant S as 子 Agent
+  participant T as 工具(fs/bash)
+  U->>G: "重构 utils.py 并跑通测试"
+  G->>M: before_model: TodoList 注入计划
+  M->>M: before_model: Summarize 检查上下文水位
+  M->>G: 组装后的上下文
+  G->>T: read_file(utils.py) → 回灌
+  G->>S: 调用 calculator_agent（子 agent 作为工具）
+  S-->>G: 子 agent 结论（独立上下文，不污染主上下文）
+  G->>T: write_file(utils.py, 新实现)
+  G->>T: bash: pytest
+  T-->>G: 测试结果
+  alt 失败
+    G->>M: after_model: 中间件决定压缩并重试
+  else 通过
+    G->>U: 完成（messages 经 reducer 累积，intermediate_steps 记录全程）
+  end
+```
+
+**三个可观察点**：① **子 agent 有独立上下文**（返回的只有结论，不带过程噪声）；② **中间件在每次模型调用前后环绕**（压缩、计划注入都在此发生）；③ **状态由 reducer 累积**（`messages`/`intermediate_steps` 不会互相覆盖）。
+
+## 源码级深挖：三处关键实现
+
+### ① 中间件接口：横切的统一挂载点
+
+中间件是 DeepAgent 做"横切关注点"的机制——每个中间件可以在模型调用前后插入逻辑：
+
+```python
+# 【示意实现】自定义中间件：上下文水位监控 + 自动压缩
+from deepagents.middleware import Middleware, ModelRequest, ModelResponse
+
+class BudgetGuardMiddleware(Middleware):
+    def __init__(self, warn: int = 20000, hard: int = 28000):
+        self.warn, self.hard = warn, hard
+
+    def before_model(self, req: ModelRequest) -> ModelRequest:
+        """模型调用前：检查水位，超硬阈值就压缩。"""
+        tokens = count_tokens(req.messages)
+        if tokens >= self.hard:
+            req.messages = compact(req.messages)       # 触发压缩（见 02）
+        elif tokens >= self.warn:
+            req.messages.append(system("提示：上下文接近上限，请尽快收敛任务。"))
+        return req
+
+    def after_model(self, resp: ModelResponse) -> ModelResponse:
+        """模型调用后：记录用量，供成本控制。"""
+        record_usage(resp.usage)
+        return resp
+```
+
+```python
+# 【示意实现】注册顺序 = 环绕顺序（洋葱模型）
+agent = create_deep_agent(
+    model=model, tools=tools,
+    middleware=[
+        BudgetGuardMiddleware(),                    # 最外层：先看到请求、最后看到响应
+        TodoListMiddleware(),
+        ContextSummarizationMiddleware(max_messages=30),  # 最内层：贴近模型
+    ],
+)
+```
+> **顺序陷阱**：洋葱模型下，**越靠后的中间件越贴近模型**。把"压缩"放在"注入计划"之后，会**把刚注入的计划一起压掉**——这是最常见的配置错误。
+
+### ② 子 agent 的上下文隔离
+
+子 agent 最大的价值不是"并行"，而是**上下文隔离**——它把一堆探索过程留在自己的窗口里，只把结论带回主 Agent：
+
+```python
+# 【示意实现】子 agent 封装：隔离上下文 + 限定工具 + 只回结论
+def make_subagent(name, system_prompt, tools, model="cheap-model"):
+    """子 agent 用更便宜的模型 + 更小的工具集，且返回摘要而非全量历史。"""
+    inner = create_deep_agent(model=model, tools=tools, system_prompt=system_prompt)
+
+    def call(task: str) -> str:
+        result = inner.invoke({"messages": [("user", task)]})
+        # 关键：只把"最终结论"带回主上下文，中间 20 轮探索全部丢弃
+        return result["messages"][-1].content
+    return {"name": name, "fn": call, "description": f"专门用于：{system_prompt[:40]}"}
+```
+> 这呼应 [03 harness 的 Agent 专业化](/concepts/harness/mechanism)：**专业化本身就是上下文管理策略**——子 agent 携带更少无关信息，运行在 Smart Zone 内。
+
+### ③ 文件系统抽象：虚拟 FS 与真实 FS
+
+`fs_toolkit()` 背后可以挂不同的后端——**后端选择直接决定"深任务"能否安全跑**：
+
+| 后端 | 落地位置 | 适用 |
+|---|---|---|
+| 内存虚拟 FS | 进程内存 | 短任务、测试（进程结束即丢） |
+| 本地磁盘（沙箱内） | 容器/沙箱目录 | 常规工程任务 |
+| 带 checkpointer 的持久化 | 外部存储 | 长任务、需要续跑 |
+
+```python
+# 【示意实现】文件系统后端 + checkpoint 组合（长任务必需）
+from langgraph.checkpoint.postgres import PostgresSaver
+
+with PostgresSaver.from_conn_string(DB_URL) as cp:
+    cp.setup()
+    agent = create_deep_agent(
+        model=model, tools=[*fs_toolkit(root="/workspace")],   # 沙箱内磁盘
+        checkpointer=cp,                                        # 关键：可续跑
+    )
+    agent.invoke({"messages": [("user", task)]},
+                 config={"configurable": {"thread_id": "task-42"}})
+```
+> 传 `checkpointer` 与固定 `thread_id` 后，**进程中断也能从断点续跑**——这正是 [03 harness 组件③ 持久化记忆](/concepts/harness/mechanism) 的框架级实现。
+
+## 深入问答：为什么这样设计
+
+**Q1：中间件为什么用"环绕"（before/after）而不是"钩子列表"？**
+环绕保证**成对**——有 `before_model` 就一定有 `after_model`，资源申请与释放天然配对。钩子列表容易出现"有进无出"（记录开始了却没记录结束）。
+
+**Q2：子 agent 为什么要用更便宜的模型？**
+子任务通常**更聚焦、链路更短**，用最强模型是浪费；而且子 agent 可重试——一次失败的成本远低于主 agent。这是"把算力花在刀刃上"的成本结构设计。
+
+**Q3：`messages` 为什么必须显式声明 reducer？**
+图执行下**可能有多个节点并发写同一个键**。没有 reducer 时后写覆盖先写（历史丢失）；`add_messages` 把它变成"追加合并"。不声明 reducer 是隐性 bug（见 [5-1 reducer](/concepts/graph/mechanism)）。
+
+**Q4：长任务为什么必须挂 checkpointer？**
+图执行可能因中断、超时、崩溃而终止。没有 checkpoint，**已完成的全部工作与花费一起作废**；挂了之后可按 `thread_id` 从断点续跑。
+
 ## 局限与不适用场景
 
 | 局限 | 说明 | 何时别用 |
