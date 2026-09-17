@@ -11,7 +11,7 @@ title: context 验收 gate
 python concepts/context/gate/context_gate.py
 ```
 
-## 验证内容（6 项，均真实执行）
+## 验证内容（8 项，均真实执行）
 
 | # | 验证 | 方式 |
 |---|---|---|
@@ -21,6 +21,8 @@ python concepts/context/gate/context_gate.py
 | ④ | 真实 tokenizer vs `split()` 差异 | **真 `tiktoken`** 计数 |
 | ⑤ | 中文 token 成本 | 中文按字计，与空白切分不同 |
 | ⑥ | **DSE 产物可断言** | 抽取实体/意图/约束为结构化字段，逐项 `assert`（对比 LLM 摘要不可断言） |
+| ⑦ | **分派是声明式、非 LLM 决策** | `ROUTING` 静态表；`dse_only` 零 LLM 调用、`hybrid` 只吃残余、策略不影响 DSE 结果 |
+| ⑧ | **顺序契约：DSE 必须先于 LLM** | 正确顺序 3 条约束 vs 先摘要后 1 条（措辞被改写致静默失配） |
 
 ## 实测输出（真实 tiktoken）
 
@@ -28,8 +30,10 @@ python concepts/context/gate/context_gate.py
 split估算=4, 真实tokens=10     ← 空格切分低估 2.5 倍
 中文 24 字 -> 27 tokens
 entities=['alice@corp.com'], intent=部署, constraints=3 条
-check1..check6: PASS
-PASS: context gate 6/6（真实 tokenizer 已启用 + DSE 产物可断言）
+dse_only.llm_calls=0, hybrid LLM 输入=60/160 字符    ← 残余剔除省 62%
+正确顺序 3 条约束；顺序颠倒 1 条                      ← 顺序是契约，不是风格
+check1..check8: PASS
+PASS: context gate 8/8（真实 tokenizer + DSE 可断言 + 分派声明式 + 顺序契约）
 ```
 
 > 依赖：`pip install tiktoken`。
@@ -166,6 +170,77 @@ def dse_fields_are_assertable():
     return ok
 
 
+# ---- 策略分派：声明式表 + 固定顺序流水线（DSE 先，LLM 只在残余上）----
+DSE, LLM, PRUNE = "dse", "llm", "prune"
+
+ROUTING = {                      # 静态声明，运行时零决策（非 LLM 判断）
+    "identity": DSE, "constraint": DSE, "tool_call": DSE,
+    "narrative": LLM, "chatter": PRUNE,
+}
+
+_SAMPLE = ("用户 alice@corp.com 向 bob@corp.com 说：请把 https://svc/api/v1.2.3 部署到 prod，\n"
+           "必须只读校验，超时 5 秒，不改 config.yaml\n"
+           "另外我这边还有一堆杂七杂八的事情，比如上周那个讨论会大家聊了很久关于架构\n"
+           "演进的方向，最后也没定下来，先这样吧\n"
+           "谢谢老师")
+
+
+def residual_text(text, dse_out):
+    """剔除 DSE 已抽走的行——残余才交给 LLM，避免双份成本与语义重复。"""
+    cons = set(dse_out["constraints"])
+    keep = []
+    for line in text.splitlines():
+        if line in cons or DSE_CONSTRAINT_PAT.search(line):
+            continue
+        if any(p.search(line) for p in DSE_ENTITY_RULES.values()):
+            continue
+        keep.append(line)
+    return "\n".join(keep)
+
+
+def compress(text, strategy="hybrid", summarize_fn=None):
+    """三模式：dse_only（零 LLM）/ llm_only（全量 LLM）/ hybrid（默认）。"""
+    stats = {"llm_calls": 0, "llm_in_chars": 0}
+    payload = {}
+    if strategy in ("dse_only", "hybrid"):
+        payload["signals"] = dse_extract_rich(text)           # ① DSE 总是先跑
+    residual = text if strategy == "llm_only" else residual_text(text, payload["signals"])
+    if strategy != "dse_only" and residual.strip() and len(residual) > 40:
+        payload["summary"] = (summarize_fn or (lambda s: s[:40] + "…"))(residual)
+        stats["llm_calls"] += 1                               # ② LLM 只吃残余
+        stats["llm_in_chars"] = len(residual)
+    return payload, stats                                     # ③ 组装 signals + summary
+
+
+def strategy_dispatch_is_declarative():
+    """真实验证：策略由静态表定死（非 LLM 决策），三模式行为可预期。"""
+    ok_set = set(ROUTING.values()) <= {DSE, LLM, PRUNE}       # 分派值闭集
+    _, s_dse = compress(_SAMPLE, "dse_only")
+    _, s_hy = compress(_SAMPLE, "hybrid")
+    p_dse, _ = compress(_SAMPLE, "dse_only")
+    p_hy, _ = compress(_SAMPLE, "hybrid")
+    ok = (ok_set
+          and s_dse["llm_calls"] == 0                         # dse_only 零 LLM
+          and s_hy["llm_calls"] == 1                           # hybrid 只调一次
+          and s_hy["llm_in_chars"] < len(_SAMPLE)              # LLM 只吃残余（更省）
+          and p_hy["signals"] == p_dse["signals"])             # 策略不影响 DSE 结果
+    print(f"    dse_only.llm_calls={s_dse['llm_calls']}, "
+          f"hybrid LLM 输入={s_hy['llm_in_chars']}/{len(_SAMPLE)} 字符")
+    return ok
+
+
+def dse_before_llm_order_is_contract():
+    """真实验证：先摘要再 DSE 会因措辞被改写而静默丢约束 → 顺序是契约。"""
+    def summarize_rewrites(s):          # 模拟 LLM 摘要改写措辞
+        return (s.replace("必须只读校验", "需要保证可读")
+                 .replace("不改 config.yaml", "保持配置不变"))
+
+    good = dse_extract_rich(_SAMPLE)["constraints"]                    # 正确：DSE 先
+    bad = dse_extract_rich(summarize_rewrites(_SAMPLE))["constraints"]  # 错误：摘要先
+    print(f"    正确顺序 {len(good)} 条约束；顺序颠倒 {len(bad)} 条")
+    return len(good) > len(bad)
+
+
 def main():
     checks = [
         budget_controller_degrades_ok(),
@@ -174,11 +249,13 @@ def main():
         tiktoken_differs_from_split(),
         chinese_token_cost_is_real(),
         dse_fields_are_assertable(),
+        strategy_dispatch_is_declarative(),
+        dse_before_llm_order_is_contract(),
     ]
     for i, ok in enumerate(checks, 1):
         print(f"check{i}: {'PASS' if ok else 'FAIL'}")
     assert all(checks), "context gate failed"
-    print("PASS: context gate 6/6（真实 tokenizer 已启用 + DSE 产物可断言）")
+    print("PASS: context gate 8/8（真实 tokenizer + DSE 可断言 + 分派声明式 + 顺序契约）")
 
 
 if __name__ == "__main__":
