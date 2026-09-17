@@ -10,18 +10,73 @@ title: 1-6 实例里的 prompt
 
 | 实例 | prompt 怎么组织 | 关键做法 |
 |---|---|---|
-| **Claude Code** | system prompt + 项目级 `CLAUDE.md` 注入 | "常驻说明书 + 项目规则"双轨，再叠加工具说明；权限/会话压缩影响内容进视图（经源码剖析） |
-| **Hermes** | System Prompt 工程模块（源码有专门章节） | 在 agent 框架里显式管理系统 prompt；与多模型适配、上下文管理一起作为核心模块设计 |
-| **DeepSeek Harness** | `PromptSection` 分段、变量插值、按 order 排序拼接 | 把 system prompt 拆成可组合的"段"，用表达式拼装；实现"地图而非手册"的渐进披露 |
+| **Claude Code** | system prompt + 项目级 `CLAUDE.md` 注入 | "常驻说明书 + 项目规则"双轨，再叠加工具说明；权限/会话压缩影响内容进视图 |
+| **Hermes** | System Prompt 工程模块（源码有专门章节） | 在框架里**显式管理** system prompt；与多模型适配、上下文管理并列为核心模块 |
+| **DeepSeek Harness** | `PromptSection` 分段 + 变量插值 + 按 `order` 拼接 | 把 system prompt 拆成**可组合的段**，实现"地图而非手册"的渐进披露 |
 
-::: info 【事实】
-来源：sawzhang《深入理解 Claude Code 源码》；Hermes 源码分析（System Prompt 工程章节）；iceyao《DeepSeek Harness 源码深度解析》。
-:::
+## 三种组织形态（真实结构）
 
-## 一个共性
+**① Claude Code：双轨注入**
+```text
+[常驻 system prompt]  身份 + 通用纪律 + 工具说明
+        +
+[项目 CLAUDE.md]     技术栈 / 测试命令 / 禁止事项 / 目录指针   ← 按目录层级加载
+        ↓
+每轮请求 = 上述两轨 + 本轮对话与工具结果
+```
+> 特点：**通用纪律与项目规则分离**——换项目只换 `CLAUDE.md`，system prompt 不动。
 
-常驻系统提示词（人设 + 纪律） ＋ 项目规则注入（`AGENTS.md` / `CLAUDE.md`） ＋ 按需分段（`PromptSection` / 渐进披露） ＝ 给模型的整体指令（清晰、可控、不臃肿）。
+**② Hermes：把 prompt 当"工程模块"管**
+```text
+system_prompt/
+├── base.md            # 基础人设
+├── tools.md           # 工具说明段
+└── policy.md          # 纪律与边界段
+# 运行时按模型能力/场景选择性地拼装（多模型适配）
+```
+> 特点：**prompt 是一等公民**，有独立目录与拼装逻辑，可随模型/场景切换。
+
+**③ DeepSeek Harness：分段 + 变量插值 + 排序**
+```python
+# 每段带 order 与变量，运行时插值后按序拼接
+PromptSection(order=10, template="你是 {{role}}…", vars={"role": "工程师"})
+PromptSection(order=20, template="{{project_rules}}")     # 注入 AGENTS.md
+PromptSection(order=90, template="当前任务：{{task}}")     # 临时段放最后
+```
+> 特点：**可组合、可测试**——每段能单独改、单独断言，天然支持"渐进披露"。
+
+## 一个共性公式
+
+```text
+给模型的整体指令
+  = 常驻系统提示词（人设 + 纪律）
+  + 项目规则注入（AGENTS.md / CLAUDE.md）
+  + 按需分段（PromptSection / 渐进披露）
+```
+
+三者合起来要达到同一个目标：**清晰、可控、不臃肿**。
 
 ::: tip 启示
-优秀 agent 的 prompt 都不是"一段话"，而是一套**分层、可组合、按需注入**的指令系统——这已是一只脚迈进 `harness engineering`。
+优秀 agent 的 prompt 都不是"一段话"，而是一套**分层、可组合、按需注入**的指令系统——这已是一只脚迈进 [harness engineering](/concepts/harness)：**把 prompt 当配置与代码来管理，而不是当作文来写**。
 :::
+
+## 小测验
+
+::: details 点击展开题目与答案
+**Q1（选择）**：Claude Code 把"通用纪律"与"项目规则"分离的好处是？  
+A. 更短　B. 换项目只换 `CLAUDE.md`，system prompt 不动　C. 更省钱  
+✅ B。
+
+**Q2（判断）**：真实 agent 的 prompt 就是一大段文字。  
+❌ 错。是分层、可组合、按需注入的指令系统。
+
+**Q3（选择）**：DeepSeek Harness 用 `order` 字段的目的是？  
+A. 好看　B. 决定各段拼接顺序（稳定段在前、临时段在后）　C. 加密  
+✅ B。
+:::
+
+::: info 【事实】
+来源：sawzhang《深入理解 Claude Code 源码》；Hermes 源码分析（System Prompt 工程章节）；iceyao《DeepSeek Harness 源码深度解析》。上述结构为依据权威源的示意归纳。
+:::
+
+> 上一节：[1-5 策略④⑤⑥](/concepts/prompt/think-tools-test) ｜ 下一节：[1-7 常见坑 + 自检](/concepts/prompt/pitfalls)

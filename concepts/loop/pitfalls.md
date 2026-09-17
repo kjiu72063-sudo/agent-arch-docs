@@ -13,6 +13,57 @@ loop 最容易在"没设刹车 / 自我评估 / 上下文膨胀"上翻车。本�
 - **坑③ 自我评估**：让写代码的 Agent 审自己的代码 → "写得太好了"必然通过。**解法**：Generator/Verifier 分离 + 独立评估器。
 - **坑④ 上下文膨胀**：多轮 loop 每轮塞结果，context 越来越满 → 触发 02 的 compaction，但若不压缩，长任务后段会失真/超限。**解法**：loop 与 compaction 联动，每 N 轮或超水位即压缩。
 
+## 反模式对照（代码级）
+
+### 坑① 目标模糊 —— 可程序检验的 Goal
+
+```python
+# ✕ 反模式：目标无法判定，循环只能靠"感觉"停
+goal_is_met = lambda: "代码变好了"
+
+# ✓ 正解：可执行、返回布尔的判据
+import subprocess
+def goal_is_met():
+    tests = subprocess.run(["pytest", "-q"]).returncode == 0
+    lint  = subprocess.run(["ruff", "check", "."]).returncode == 0
+    return tests and lint            # 全绿才算达标
+```
+
+### 坑② 无刹车烧钱 —— 三刹车必设
+
+```python
+# ✕ 反模式：只有 while True，没有上限
+while not goal_is_met():
+    result = agent.run(task)          # 一晚上烧掉一个月预算
+
+# ✓ 正解：迭代 / 成本 / 无进展，三刹车齐备
+iterations = cost = stalled = 0
+while not goal_is_met():
+    result = agent.run(task); cost += result.cost; iterations += 1
+    if iterations >= MAX_ITER or cost >= MAX_COST_USD:
+        break                          # 刹车 1 & 2
+    stalled = stalled + 1 if result.output == last else 0
+    if stalled >= NO_PROGRESS_LIMIT:
+        break                          # 刹车 3
+    last = result.output
+```
+
+### 坑③ 自我评估 —— Maker 与 Checker 必须是两个主体
+
+```python
+# ✕ 反模式：同一个 agent 既写又评 → 必然"通过"
+result = maker.run(task)
+if maker.evaluate(result).passed:      # 自己给自己打分
+    return result
+
+# ✓ 正解：独立 Verifier，对照外部 rubric，且可用更便宜模型
+result = maker.run(task)
+report = checker.evaluate(result, rubric)   # 独立评估器（不同实例/模型）
+if report.passed:
+    return result
+feed_back(report)                      # 不通过 → 把报告喂回进下一轮
+```
+
 ## 产物化三档自检
 
 | 档位 | 必须提交的产物 |

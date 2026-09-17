@@ -13,6 +13,63 @@ harness 最容易"看起来搭了、实际兜不住"。本节给四个常见坑 
 - **坑③ 缺 fail-closed**：后端不可用就跳过安全降级裸跑 → 危险操作直接放行。**解法**：拿不到安全后端就失败（fail-closed），绝不降级。
 - **坑④ 熵失控**：长任务不落地 checkpoint、不归档 → 上下文膨胀、目标漂移、不可复现。**解法**：仓库即记录系统 + 阶段归档。
 
+## 反模式对照（配置/代码级）
+
+### 坑① 权限过宽 —— 粒度化矩阵
+
+```json
+// ✕ 反模式：all-or-nothing，要么干不了活要么裸奔
+{ "permissions": { "allow": ["*"] } }
+
+// ✓ 正解：allow/deny + 条件审批
+{ "permissions": {
+    "allow": ["Read(**)", "Bash(uv run pytest:*)"],
+    "deny":  ["Bash(rm -rf:*)", "Write(.env)"],
+    "require_approval": ["Write(src/**)"]
+} }
+```
+
+### 坑② 靠模型自觉 —— 声明 ≠ 执行
+
+```bash
+# ✕ 反模式：AGENTS.md 里写"改动必须通过测试"，但没有东西强制执行
+echo "改动必须通过 pytest" >> AGENTS.md
+
+# ✓ 正解：机械化门禁，违规直接失败（exit≠0 阻断）
+# .git/hooks/pre-commit
+uv run pytest || exit 1
+uv run ruff check . || exit 1
+```
+
+### 坑③ 缺 fail-closed —— 拿不到沙箱就停，不降级
+
+```python
+# ✕ 反模式：沙箱不可用就跳过隔离裸跑
+try:
+    sandbox = get_sandbox()
+except SandboxUnavailable:
+    run_directly(cmd)          # 危险：越权命令被放行
+
+# ✓ 正解：fail-closed，拿不到安全后端就失败
+sandbox = get_sandbox()        # 抛错即中止，绝不降级
+assert sandbox.available, "SANDBOX_UNAVAILABLE：拒绝在无隔离环境执行"
+```
+
+### 坑④ 熵失控 —— checkpoint 与归档
+
+```python
+# ✕ 反模式：长任务只在内存里推进，崩了全丢、也无法复现
+state = {}
+for step in plan:
+    state.update(run(step))
+
+# ✓ 正解：每阶段落地 checkpoint + 归档，可恢复、可复现
+for i, step in enumerate(plan):
+    state.update(run(step))
+    save_checkpoint(f"ckpt-{i}.json", state)     # 可恢复
+    write_log(f"stage-{i}.md", summarize(state)) # 可复现
+```
+
 ## 产物化三档自检
 
 | 档位 | 必须提交的产物 |

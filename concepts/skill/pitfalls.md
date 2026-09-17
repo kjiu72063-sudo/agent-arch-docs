@@ -13,6 +13,68 @@ skill 体系最容易在"全量注入 / skill 写太薄 / 无版本评审"上翻
 - **坑③ 边界不清**：把"确定函数"当 skill、或把 skill 当 context → 执行责任混乱。**解法**：明确 tool（执行）/ context（信息）/ skill（能力说明）三者边界。
 - **坑④ 无版本评审**：skill 改坏依赖它的 agent 无感知。**解法**：版本号 + 变更记录 + 评审流程；用装饰器做横切，不动原逻辑。
 
+## 反模式对照（配置/代码级）
+
+### 坑① 全量注入 —— 按需 discovery，命中才注入
+
+```python
+# ✕ 反模式：把 30 个 skill 的正文全塞进 system prompt
+system = base + "\n".join(skill.body for skill in ALL_SKILLS)   # 窗口爆、注意力稀释
+
+# ✓ 正解：只常驻"目录"（name+description），命中后再注入正文
+catalog = "\n".join(f"- {s.name}: {s.description}" for s in ALL_SKILLS)
+# 模型按目录选中 skill → 才把该 skill 正文注入
+if hit := match_skill(user_intent):
+    context += hit.body
+```
+
+### 坑② skill 写太薄 —— 五个必备段落
+
+```markdown
+<!-- ✕ 反模式 -->
+# code-review
+帮我审查代码。
+
+<!-- ✓ 正解：触发 / 步骤 / 输出格式 / 边界 / 失败处理 -->
+# code-review
+## 触发条件
+当用户要求 review 代码或提供 diff 时使用。
+## 执行步骤
+1. 读取 diff；2. 按 P0/P1/P2 分级检查；3. 输出问题清单。
+## 输出格式
+JSON：{issues:[{level,file,line,desc}], verdict}
+## 边界与约束
+只读审查，不改文件；发现敏感操作标为 P0 并停止。
+## 失败处理
+无法定位问题时提问，不猜测。
+```
+
+### 坑③ 边界不清 —— tool / context / skill 分工
+
+| 类型 | 职责 | 反例 |
+|---|---|---|
+| **tool** | 真的执行动作（读文件、发请求） | 把"读文件"写成 skill → 模型拿到说明书却没有执行能力 |
+| **context** | 提供信息（资料、规则） | 把长规范塞进 skill → 每次注入都占预算 |
+| **skill** | 说明"这类任务该怎么做" | 把 skill 当工具 → 期待它自己执行 |
+
+### 坑④ 无版本评审 —— 版本号 + 装饰器横切
+
+```python
+# ✕ 反模式：改动直接改原函数，依赖方无感知、无法回滚
+def review(code):
+    ...  # 直接改这里，所有调用方一起受影响
+
+# ✓ 正解：语义化版本 + 变更记录；横切用装饰器，不动原逻辑
+SKILL_VERSION = "1.2.0"          # 配合 CHANGELOG 与评审
+def with_logging(fn):            # 装饰器：加日志/缓存，不侵入原实现
+    def wrapper(*a, **k):
+        log("start"); r = fn(*a, **k); log("end"); return r
+    return wrapper
+
+@with_logging
+def review(code): ...
+```
+
 ## 产物化三档自检
 
 | 档位 | 必须提交的产物 |
