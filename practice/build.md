@@ -13,20 +13,22 @@ Track C 终点、也是阶段 B 的收口：把前面所有复盘，沉淀成**�
 ## 四步骤产出
 
 ### ① harness 架构图
-外壳 / 权限 / 执行环境 / 机械化守护 / 熵管理，五件套缺一不可：
+对齐 [03 harness 的七大核心组件](/concepts/harness)：上下文工程 / Agent 专业化 / 持久化记忆 / 结构化执行 / 架构约束 / 反馈循环 / 熵管理，缺一不可：
 
 ```mermaid
 flowchart TD
-  H["你的 harness"] --> AG["AGENTS.md 项目宪法"]
-  H --> PERM["权限系统 allow/deny"]
-  H --> ENV["执行环境 sandbox"]
-  H --> MECH["机械化守护 lint/测试"]
-  H --> ENT["熵管理 摘要/归档"]
+  H["你的 harness"] --> AG["① 上下文工程\nAGENTS.md 地图 + docs/"]
+  H --> SP["② Agent 专业化\n受限工具的角色分工"]
+  H --> MEM["③ 持久化记忆\n进度文件 + git log + JSON"]
+  H --> EX["④ 结构化执行\n理解→规划→执行→验证"]
+  H --> CON["⑤ 架构约束\n分层依赖 + Linter + CI"]
+  H --> FB["⑥ 反馈循环\nAgent 审 Agent"]
+  H --> ENT["⑦ 熵管理\n垃圾回收 + doc-gardening"]
   AG -->|注入常驻上下文| C{"让 agent 知道规则"}
-  PERM -->|拦截越权| E["工具执行"]
-  MECH -->|不达标准阻断| E
+  CON -->|不达标准阻断| E["工具执行"]
+  FB -->|失败信息回灌| E
   style H fill:#0d7d6e,color:#fff
-  style ENV fill:#4f46e5,color:#fff
+  style CON fill:#b45309,color:#fff
 ```
 
 ### ② loop 流程图 + 终止/韧性决策表

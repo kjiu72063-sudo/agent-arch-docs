@@ -51,7 +51,7 @@ cnblogs 的核心工程原则（【事实】）：**写代码的 Agent 和审代
 
 ## 决策三：Ralph 循环 —— 把 harness 与 loop 串起来
 
-deusyu/harness-engineering 收录的 Ralph 框架，六条信条与 harness 概念直接映射（【事实】）：
+Huntley 的 **Ralph Wiggum Loop**（教材《Harness Engineering 从入门到实战》亦有收录，[S11](/practice/sources)；deusyu/harness-engineering 收录同名框架），六条信条与 harness 概念直接映射（【事实】）。教材特别指出：**其核心不是循环本身，而是"反压"（Backpressure）**——
 
 | Ralph 信条 | 对应 harness 概念 |
 |---|---|
@@ -63,6 +63,14 @@ deusyu/harness-engineering 收录的 Ralph 框架，六条信条与 harness 概�
 | Let Ralph | 智能体执行（坐在循环上，不坐在循环里） |
 
 > 一句话：Ralph 让"人坐循环上、agent 坐循环里"，正好把 03 harness 的约束与 04 loop 的迭代合成一套可运行的自主工作范式。
+
+**核心是"反压"，不是循环本身**（教材 [S11](/practice/sources)，【事实】）：
+
+- **上游反压**：确定性设置、一致的上下文分配、**现有代码模式引导模型走向首选实现**；
+- **下游反压**：测试、类型检查、Lint、构建、安全扫描器和自定义验证器**拒绝无效工作**。
+
+Huntley 的生产设置：NixOS 裸金属、Agent 直接推 `master`（**无分支、无人工代码审查**）、部署 30 秒内完成；出错时**反馈循环直接馈入活跃会话自我修复**。
+> 这在 [03 harness](/concepts/harness/design) 里对应"纠错成本低、等待成本高"的组织结论——**敢去掉人工审查的前提，是下游反压足够强**。
 
 ## 决策四：loop 可运行闭环（含 Open/Closed 切换 + 三刹车）
 

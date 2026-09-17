@@ -23,6 +23,6 @@
   },
   "gate": {
     "checks": ["ruff", "pytest"],
-    "on_failure": "输出含修复指令，供 agent 自纠后重跑"
+    "on_failure": "❌ lint/测试未通过。\n✅ FIX: 按报告逐条修正（删未用 import、补齐空行、修失败用例），改完重跑 `uv run pytest && uv run ruff check .`。\n📖 See: docs/conventions/testing.md"
   }
 }

@@ -19,15 +19,16 @@ python concepts/harness/gate/harness_gate.py
 |---|---|---|
 | ① | AGENTS.md 是地图式 | 行数 ≤120 且深层指针 ≥3 处 |
 | ② | 不沦为手册 | 硬性纪律段 ≤15 行 |
-| ③ | 门禁可自纠 | `on_failure` 含"修复指令" |
+| ③ | 门禁可自纠（**错误信息三要素**） | `on_failure` 同时含 `❌` + `✅ FIX` + `📖 See` |
 | ④ | 越权被拦截 | `git_push`/`http_request` 在 deny 且不在 allow |
 | ⑤ | 沙箱 fail-closed | `sandbox.enabled` 与 `fail_closed` 均为 true |
 
 ## 实测输出
 
 ```
-AGENTS.md 45 行, 深层指针 4 处
+AGENTS.md 36 行, 深层指针 5 处
 硬性纪律段 5 行
+三要素: ❌=True ✅FIX=True 📖See=True
 deny=2 条, allow=4 条
 check1..check5: PASS
 PASS: harness gate 5/5（对 fixtures 真实文件断言）
@@ -75,11 +76,15 @@ def agents_md_has_no_long_manual():
 
 
 def gate_output_has_fix_instruction():
-    """真实验证：门禁输出应含可被 agent 读取的修复指令。"""
+    """真实验证：门禁输出必须含"错误信息即 Prompt"三要素
+    ❌ 什么错了 / ✅ FIX 怎么改 / 📖 See 去哪看文档。"""
     cfg = load_fixture("permissions.json")
     note = cfg["gate"]["on_failure"]
-    print(f"    on_failure: {note}")
-    return "修复指令" in note
+    has_err = "❌" in note
+    has_fix = "✅ FIX" in note
+    has_see = "📖 See" in note
+    print(f"    三要素: ❌={has_err} ✅FIX={has_fix} 📖See={has_see}")
+    return has_err and has_fix and has_see
 
 
 def deny_out_of_scope_action():

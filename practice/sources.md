@@ -20,12 +20,24 @@ title: 事实源清单
 | S2 | 《Loop Engineering 完全指南》 | 技术博客 | [04 loop](/concepts/loop) | 归纳（图表+案例） | [cnblogs.com/xiaobaiysf/p/21964451](https://www.cnblogs.com/xiaobaiysf/p/21964451) |
 | S3 | Hermes 源码研究 | GitHub 仓库 | [Hermes 实例](/instances/hermes) · [05 graph](/concepts/graph) | 仓库（System Prompt 工程章） | [github.com/luyao618/Hermes-Source-Code-Study](https://github.com/luyao618/Hermes-Source-Code-Study) |
 | S4 | deep-dive-claude-code | GitHub 仓库 | [Claude Code 实例](/instances/claude-code) | 仓库（源码剖析） | [github.com/sawzhang/deep-dive-claude-code](https://github.com/sawzhang/deep-dive-claude-code) |
-| S5 | Codex 剖析 | 技术博客 | [Codex 实例](/instances/codex) · [03 harness](/concepts/harness) | 归纳 | [cnblogs.com/smartloli/p/20684447](https://www.cnblogs.com/smartloli/p/20684447) |
+| S5 | Codex 剖析 | 技术博客 | [Codex 实例](/instances/codex) | 归纳 | [cnblogs.com/smartloli/p/20684447](https://www.cnblogs.com/smartloli/p/20684447) |
 | S6 | DeepSeek Harness 解析 | CSDN 博客 | [DeepSeek Harness 实例](/instances/deepseek-harness) | 归纳 | [blog.csdn.net/ChesterXue/article/details/163745888](https://blog.csdn.net/ChesterXue/article/details/163745888) |
 | S7 | DeepSeek Harness 源码深度解析 | 技术博客 | [02 context](/concepts/context) · [DeepSeek Harness 实例](/instances/deepseek-harness) | 归纳（context/spill/compaction 三件套） | [iceyao.com.cn/post/2026-08-13-…](https://www.iceyao.com.cn/post/2026-08-13-deepseek-harness%E6%BA%90%E7%A0%81%E6%B7%B1%E5%BA%A6%E8%A7%A3%E6%9E%90/) |
-| S8 | harness-engineering | GitHub 仓库 | [03 harness](/concepts/harness) | 仓库 | [github.com/deusyu/harness-engineering](https://github.com/deusyu/harness-engineering) |
+| S8 | harness-engineering | GitHub 仓库 | （03 harness 的**次要**参考） | 仓库 | [github.com/deusyu/harness-engineering](https://github.com/deusyu/harness-engineering) |
 | S9 | 腾讯云开发者 · skill 文章 | 技术文章 | [06 skill](/concepts/skill) | 文章 | [cloud.tencent.com/developer/article/2646885](https://cloud.tencent.com/developer/article/2646885) |
 | S10 | LangChain deepagents 实践 | CSDN 博客 | [DeepAgent 实例](/instances/deepagent) | 归纳 | [blog.csdn.net/weixin_44733966/article/details/156938858](https://blog.csdn.net/weixin_44733966/article/details/156938858) |
+| **S11** | **《Harness Engineering 从入门到精通实战》**（用户提供，51 页） | **权威教材** | **[03 harness 全章](/concepts/harness)（主权威源）** | **逐字直读**（本地 PDF 全文抽取，51398 字符） | 本地 PDF；其原始来源见下方「S11 的原始出处」 |
+
+### S11 的原始出处（该教材汇整自以下一手来源，【事实】）
+
+| 来源 | 链接 |
+|---|---|
+| Mitchell Hashimoto《My AI Adoption Journey》（术语首次提出） | [mitchellh.com/writing/my-ai-adoption-journey](https://mitchellh.com/writing/my-ai-adoption-journey) |
+| OpenAI《Harness engineering: leveraging Codex in an agent-first world》 | [openai.com/index/harness-engineering](https://openai.com/index/harness-engineering/) |
+| Anthropic《Effective harnesses for long-running agents》 | [anthropic.com/engineering/effective-harnesses-for-long-running-agents](https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents) |
+| Anthropic《Harness design for long-running application development》 | [anthropic.com/engineering/harness-design-long-running-apps](https://www.anthropic.com/engineering/harness-design-long-running-apps) |
+| LangChain《The Anatomy of an Agent Harness》 | [langchain.com/blog/the-anatomy-of-an-agent-harness](https://www.langchain.com/blog/the-anatomy-of-an-agent-harness) |
+| Martin Fowler《Harness Engineering - first thoughts》等两篇 | [martinfowler.com/articles/exploring-gen-ai/harness-engineering-memo.html](https://martinfowler.com/articles/exploring-gen-ai/harness-engineering-memo.html) |
 
 ## 二、通用参考（跨框架的权威共识）
 

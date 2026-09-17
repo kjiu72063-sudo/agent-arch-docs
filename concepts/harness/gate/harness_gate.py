@@ -36,11 +36,15 @@ def agents_md_has_no_long_manual():
 
 
 def gate_output_has_fix_instruction():
-    """真实验证：门禁输出应含可被 agent 读取的修复指令（读真实配置里的 on_failure 说明）。"""
+    """真实验证：门禁输出必须含"错误信息即 Prompt"三要素
+    ❌ 什么错了 / ✅ FIX 怎么改 / 📖 See 去哪看文档（教材 Harness Engineering）。"""
     cfg = load_fixture("permissions.json")
     note = cfg["gate"]["on_failure"]
-    print(f"    on_failure: {note}")
-    return "修复指令" in note
+    has_err = "❌" in note
+    has_fix = "✅ FIX" in note
+    has_see = "📖 See" in note
+    print(f"    三要素: ❌={has_err} ✅FIX={has_fix} 📖See={has_see}")
+    return has_err and has_fix and has_see
 
 
 def deny_out_of_scope_action():
