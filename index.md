@@ -31,6 +31,8 @@ features:
     details: 每个知识点讲清在体系中的位置；硬断言标注【事实】/【推断】来源。
 ---
 
+<div class="home-author">✍️ 作者 <strong>Aer</strong> · <a href="https://github.com/kjiu72063-sudo/agent-arch-docs" target="_blank" rel="noopener">GitHub 仓库</a> · 最近更新 2026-09-18</div>
+
 ## 推荐阅读路径（从 0 到 1）
 
 1. **第一步**：读「新手前置」，搞懂 LLM / token / 工具调用 / 什么是 Agent。
@@ -55,15 +57,6 @@ features:
   - `loop_gate`：只验证**确定性控制流**（三刹车/Goal 短路），**不验证 LLM 产出质量**。
 - **权威源**：每章标注【事实】出处（Anthropic / OpenAI / LangGraph / 腾讯云 / iceyao 等）。要深入请**直接读原文**，本站负责的是"坐标与入口"。
 :::
-
-## 内容现状（v0.7）
-
-| Track | 状态 | 说明 |
-|---|---|---|
-| Track 0 新手前置 | ✅ 完成 | 7 页（含 Track 0→A 难度阶梯说明） |
-| Track A 概念主轴 | ✅ 完成 | prompt(7 子页) + 02–06 各 `机制/设计决策/坑与自检` 三子页 + gate |
-| Track B 框架实例 | ⚠️ 部分源码级 | deepagent / claude-code / deepseek-harness / hermes 已有真实代码或配置；其余偏概念映射 |
-| Track C 复刻实战 | ✅ 完成 | 对比矩阵 / 学习路径 / 掌握自检 / 自研 harness |
 
 ## 常见问题
 

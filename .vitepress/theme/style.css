@@ -104,6 +104,16 @@ body {
 .vp-doc th, .vp-doc td { border: 1px solid var(--vp-c-divider); padding: 8px 12px; }
 .vp-doc th { background: var(--vp-c-bg-alt); }
 
+/* 首页作者信息行（hero 下方正文顶部） */
+.home-author {
+  text-align: center;
+  color: var(--vp-c-text-2);
+  font-size: 0.95em;
+  margin: -10px 0 36px;
+}
+.home-author a { color: var(--vp-c-brand-1); text-decoration: none; }
+.home-author a:hover { text-decoration: underline; }
+
 /* ─── Mermaid：HTML label 末行被节点框裁剪 ───
    根因（DOM 实测）：mermaid 在渲染前测量文字，此时 Noto Sans SC webfont 往往尚未
    就绪，按 fallback 字体测宽；渲染后字体加载、中文变宽导致折行数增加——foreignObject

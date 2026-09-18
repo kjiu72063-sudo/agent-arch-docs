@@ -150,7 +150,9 @@ export default withMermaid({
       options: { translations: { button: { buttonText: '搜索', placeholder: '搜索文档…' }, modal: { noResultsText: '找不到结果', resetButtonTitle: '清除', footer: { selectText: '选择', navigateText: '切换' } } } },
     },
 
-    socialLinks: [],
+    socialLinks: [
+      { icon: 'github', link: 'https://github.com/kjiu72063-sudo/agent-arch-docs' },
+    ],
 
     docFooter: { prev: '上一页', next: '下一页' },
     outline: { label: '本页目录', level: [2, 3] },
@@ -162,8 +164,8 @@ export default withMermaid({
     lastUpdatedText: '最后更新',
 
     footer: {
-      message: 'Agent 架构知识体系 · v0.8 Track D 生产级流程',
-      copyright: '图多字少 · 关系图即导航',
+      message: '✍️ 作者 <strong>Aer</strong> · <a href="https://github.com/kjiu72063-sudo/agent-arch-docs" target="_blank" rel="noopener">GitHub 仓库</a> · 内容持续更新中',
+      copyright: 'Agent 架构知识体系 · 图多字少 · 关系图即导航',
     },
   },
 })
