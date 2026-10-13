@@ -24,7 +24,7 @@ flowchart LR
   H --> L["04 loop\n迭代循环"]
   L --> G["05 graph\n图编排"]
   S["06 skill\n横切支柱"] -. "贯穿中段" .-> H
-  S -. .-> L
+  S -.-> L
   H --> I1["Hermes"]
   H --> I2["OpenClaw"]
   L --> I3["DeepAgent"]

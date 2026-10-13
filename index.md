@@ -2,38 +2,64 @@
 layout: home
 
 hero:
-  name: Agent 架构知识体系
-  text: 从「会用」到「会造」Agent
-  tagline: 一条概念主轴（prompt → context → harness → loop → graph）＋ 一根横切支柱（skill 体系）＋ 六个真实框架落地。
+  name: 大模型工程知识体系
+  text: Agent 架构 × 训练·微调·部署
+  tagline: 上半程学会「造 Agent」，下半程学会「训得动、调得准、部得上」——两条主线内容互不依赖，各自可独立读通，共用同一套坐标系与检索。
   actions:
     - theme: brand
-      text: 进入 prompt 章节
+      text: 进入 Agent 架构
       link: /concepts/prompt
     - theme: alt
-      text: 新手前置
-      link: /start/
+      text: 进入训练·微调·部署
+      link: /training/
 
 features:
   - icon: 🧠
-    title: Track A · 概念主轴
+    title: Agent 架构 · 概念主轴
     details: prompt / context / harness / loop / graph + skill 横切。从"模型看到什么"到"复杂流程怎么编排"。
   - icon: 🏗️
-    title: Track B · 框架实例专项
-    details: Hermes / DeepAgent / OpenClaw / Claude Code / Codex / DeepSeek Harness，看真实框架怎么落地。
-  - icon: 🧩
-    title: Track C · 复刻实战
-    details: 7 维对比矩阵、两段式学习路径、掌握自检、自研 harness。
-  - icon: 🛡️
-    title: Track D · 生产级流程
-    details: 驾驭工程的生产级落地：风险分级、双轴判定、三级结论、证据阈值、受控突变——从"能跑"到"敢交付"。
+    title: Agent 架构 · 实例与实战
+    details: Hermes / DeepAgent / OpenClaw / Claude Code / Codex / DeepSeek Harness 六个真实框架 + 复刻实战 + 生产级流程。
+  - icon: 🎛️
+    title: 训练·微调·部署 · 工程流水线
+    details: 环境选型 → 数据工程 → 微调方法与加速 → 分布式训练 → 知识蒸馏 → 部署与推理优化 → MLOps。
+  - icon: 🔬
+    title: 训练·微调·部署 · 可运行资产
+    details: 白盒蒸馏 train.py、vLLM+FastAPI 服务、Ollama Modelfile、多机多卡双机命令——真代码，不是伪代码。
   - icon: 🗺️
     title: 图多字少 · 关系图即导航
-    details: 每个知识点讲清在体系中的位置；硬断言标注【事实】/【推断】来源。
+    details: 每个知识点讲清在体系中的位置；硬断言标注【事实】/【推断】并逐条给出原文页码。
 ---
 
-<div class="home-author">✍️ 作者 <strong>Aer</strong> · <a href="https://github.com/kjiu72063-sudo/agent-arch-docs" target="_blank" rel="noopener">GitHub 仓库</a> · 最近更新 2026-09-18</div>
+<div class="home-author">✍️ 作者 <strong>Aer</strong> · <a href="https://github.com/kjiu72063-sudo/agent-arch-docs" target="_blank" rel="noopener">GitHub 仓库</a> · 最近更新 2026-09-21</div>
 
-## 推荐阅读路径（从 0 到 1）
+## 本站由两个模块组成
+
+```mermaid
+flowchart TD
+  H["大模型工程知识体系"] --> A["Agent 架构<br/>会造 Agent"]
+  H --> B["训练·微调·部署<br/>会训会调会部"]
+  A --> A1["Track 0 新手前置"]
+  A --> A2["Track A 概念主轴"]
+  A --> A3["Track B 六个框架实例"]
+  A --> A4["Track C 复刻实战"]
+  A --> A5["Track D 生产级流程"]
+  B --> B1["Part 1 基础与环境"]
+  B --> B2["Part 2 数据工程"]
+  B --> B3["Part 3 微调方法与加速"]
+  B --> B4["Part 4 分布式训练"]
+  B --> B5["Part 5 知识蒸馏"]
+  B --> B6["Part 6 部署与推理优化"]
+  style H fill:#4f46e5,color:#fff
+  style A fill:#0d7d6e,color:#fff
+  style B fill:#0d7d6e,color:#fff
+```
+
+> 两条主线**内容零依赖**：只读 Agent 模块不需要懂训练，只读训练模块也不需要懂 Agent。顶部导航是"上层入口"，进入哪个模块，左栏就自动切换成哪个模块的目录。
+
+## 推荐阅读路径
+
+### 路线一 · 造 Agent（从 0 到 1）
 
 1. **第一步**：读「新手前置」，搞懂 LLM / token / 工具调用 / 什么是 Agent。
 2. **第二步**：沿概念主轴走 `prompt → context → harness → loop → graph`。
@@ -41,33 +67,43 @@ features:
 4. **第四步**：用 Track C 的对比矩阵选型，并尝试自研。
 5. **最后**：用 Track D 的生产级流程，把它跑成**可交付、可审计**的成果。
 
+### 路线二 · 训模型（从环境到上线）
+
+1. **第一步**：Part 1 把环境和选型定下来（显卡、框架、参数）。
+2. **第二步**：Part 2 + Part 3 搞定数据和微调方法。
+3. **第三步**：Part 4 上分布式——模型塞不下、跑太慢时回来查。
+4. **第四步**：Part 5 蒸馏出小模型，把能力搬到能落地的尺寸。
+5. **最后**：Part 6 部署上线，并用 Part 7 走一遍端到端闭环。
+
 ## 你将学到什么
 
-面向「要动手实现」的读者，而非只看概念。你会系统理解 Agent 的指令层、上下文、外壳、循环与图编排，能对照六个真实框架反向印证，并掌握一套**生产级交付流程**（门禁、证据、放行判定）。
+面向「要动手实现」的读者，而非只看概念。
+
+- **Agent 线**：系统理解 Agent 的指令层、上下文、外壳、循环与图编排，能对照六个真实框架反向印证，并掌握一套生产级交付流程（门禁、证据、放行判定）。
+- **训练线**：能独立完成「环境 → 数据 → 微调 → 分布式 → 蒸馏 → 部署」的全流程，看懂每一步的参数为什么这么设，并知道哪些结论有权威源支撑、哪些需要自己实测。
 
 ::: warning 本站定位（务必先读，避免误会）
-这是一份 **Agent 架构「概念地图 + 权威源导航 + 部分可运行验证」**，**不是**完整的产品文档，也暂不宣称"完备知识体系"。请按如下预期使用：
+这是一份**概念地图 + 权威源导航 + 部分可运行验证**，**不是**完整的产品文档，也暂不宣称"完备知识体系"。请按如下预期使用：
 
-- **覆盖广度完整**：12 个知识点（5 主轴 + skill + 6 实例）均有页面与关系图；
-- **深度分层**：每章分 `机制 → 设计决策 → 坑与自检` 三层。多数内容为「概念/机制级」；**设计决策层**引入了权威源的决策表与代码，但**内容量仍只是权威原文的一部分**（如 loop 章 ≈ cnblogs 原文的 2/3，部分实例章 ≈ 权威源码解析的 1/6）；
-- **验证边界**：`concepts/*/gate/` 下的脚本可本地运行，但**验证范围有限**——
-  - `graph_gate`：真实验证（真 LangGraph：条件边/reducer/checkpoint/Send）；
-  - `context_gate`：真实验证（真 tiktoken 计数）；
-  - `harness_gate` / `skill_gate`：对 fixtures **真实文件**断言；
-  - `loop_gate`：只验证**确定性控制流**（三刹车/Goal 短路），**不验证 LLM 产出质量**。
-- **权威源**：每章标注【事实】出处（Anthropic / OpenAI / LangGraph / 腾讯云 / iceyao 等）。要深入请**直接读原文**，本站负责的是"坐标与入口"。
+- **Agent 线**：12 个知识点（5 主轴 + skill + 6 实例）均有页面与关系图；深度分 `机制 → 设计决策 → 坑与自检` 三层。
+- **训练线**：严格溯源到一份 24–30 课时的实战课程（6 份讲义 + 1 份课程大纲 + 配套代码与数据集），**硬断言逐条标注原文页码**；每页分 `定位 → 关系图 → 机制 → 决策表 → 可运行 → 坑与自检 → 来源` 七段。
+- **验证边界（两条线统一口径）**：
+  - ✅ **验证**：可确定性复现的计算与结构——显存/量化换算、LoRA 参数量、Ring All-Reduce 通信量、ZeRO 显存公式、数据 schema、配置互斥、**KL 散度实现的数值比对**。
+  - ❌ **不验证**：训练效果、推理质量、加速倍数。这些属**实测范畴**，本站只给方法与预期区间，**不提供假验收**。
+- **权威源**：Agent 线标 Anthropic / OpenAI / LangGraph 等出处；训练线标讲义页码与代码文件。要深入请**直接读原文**，本站负责的是"坐标与入口"。
 :::
 
 ## 常见问题
 
-**这套体系是什么？**
-一条"概念主轴 + 横切支柱 + 六个落地实例"：从"模型看到什么"递进到"复杂流程如何编排"，再用六个真实框架反向印证。
+**两个模块是什么关系？**
+并列的两条主线。Agent 学"怎么编排一个会干活的系统"，训练学"怎么把一个通用模型调成能干你这行的模型"。两者都不要求先读对方。
 
-**为什么先学 prompt？**
-prompt 是整条主轴的基座——后面所有工程（上下文、工具、循环）最终都要通过一段文字送到模型面前。连 prompt 都写不对，后面再花哨也白搭。
+**为什么分成两条线而不是合成一条？**
+因为两条线的工程节奏完全不同：Agent 线是"编排与约束"，训练线是"算力与流水线"。混在一起会让两边都讲不透。但底层共享同一批概念——token、上下文窗口、精度、显存——所以放在同一个站里检索最方便。
 
 **学完能做什么？**
-阶段 A **评用**：能选型、能搭可跑工程；阶段 B **自研**：能设计 harness + loop + graph + skill 体系，画出整体架构。
+Agent 线：阶段 A **评用**（能选型、能搭可跑工程），阶段 B **自研**（能设计 harness + loop + graph + skill 体系）。
+训练线：能独立跑通一次完整的垂类微调与部署，并看得懂每一步的参数含义与代价。
 
 **和某个产品的官方文档是什么关系？**
-不是任何一家产品的官方文档，而是把多个框架放到同一套概念坐标系下对比、归纳出的"元知识"。
+不是任何一家产品的官方文档。Agent 线是把多个框架放到同一套概念坐标系下对比归纳出的"元知识"；训练线是把一份体系化课程的讲义重新组织成可检索、可溯源的知识地图。

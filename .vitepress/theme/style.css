@@ -129,3 +129,31 @@ body {
   margin: 0 !important;
   padding: 0 !important;
 }
+
+/* ─── Part 10 案例库：按 Part 分组的卡片栅格（移动优先）───
+   卡片在 md 中以内联样式书写（生命周期最简单、无 SSR 样式丢失问题）；
+   响应式断点无法用内联样式表达，故把「窄屏优先 + 逐级加列」的覆盖规则放这里。
+   默认（手机）：单列一列到底；≥640px：外框两列、内层仍单列；
+   ≥720px：外框两列 + 内层两列（一列基础题、一列综合题）；≥1100px：外框三列。
+   规则作用域限定在正文内（.vp-doc > div > div），不会误伤 VitePress 自带栅格/
+   代码块/表格，因为它们不是「正文的直接子 div」。 */
+@media (min-width: 640px) {
+  .vp-doc > div > div { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (min-width: 720px) {
+  .vp-doc > div > div > div:last-child { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (min-width: 1100px) {
+  .vp-doc > div > div { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+/* 卡片内链接：去掉 VitePress 默认下划线，hover 给反馈 */
+.vp-doc > div > div a { text-decoration: none; }
+.vp-doc > div > div a:hover { text-decoration: underline; }
+
+/* 触摸目标：卡片内链接补足可点区域（≥44px 高） */
+.vp-doc > div > div a[href^="/training/p10/"] {
+  display: inline-block;
+  padding: 8px 0;
+  min-height: 44px;
+}

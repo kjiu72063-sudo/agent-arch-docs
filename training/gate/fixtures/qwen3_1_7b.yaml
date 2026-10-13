@@ -1,0 +1,10 @@
+model_name_or_path: /root/autodl-tmp/Qwen/
+template: qwen3
+infer_backend: vllm  # choices: [huggingface, vllm, sglang]
+trust_remote_code: true
+
+#VLLM特定配置
+vllm_config:
+  dtype: float32
+  gpu_memory_utilization: 0.9 #GPU能利用的空间比例，越高的比例代表能抗越高的并发
+  max_model_len: 8192 #能够一次性处理和生成的最大文本长度

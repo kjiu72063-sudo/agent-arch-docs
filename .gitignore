@@ -3,7 +3,14 @@ node_modules/
 .vitepress/dist/
 .vitepress/out*/
 .vitepress/cache/
+.vitepress/.temp/
+.vitepress/config.mjs.timestamp-*
+*.timestamp-*
 # 注：package-lock.json 保留入库，用于复现依赖版本
+# 注：.vitepress/components/ 是源码组件（如 P9Calculator.vue），必须入库
+
+# 根目录同名 dist —— 仅本地预览用快照，不入库
+/dist/
 
 # 日志与系统文件
 *.log
