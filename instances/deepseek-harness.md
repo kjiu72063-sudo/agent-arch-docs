@@ -207,7 +207,7 @@ ctx.effect(() => {
   return dispose                                // 返回撤销函数
 })
 ```
-> **Effect 是"一切皆插件"能成立的关键**：它保证插件热插拔时**不留残余**（对应 [06 skill 的注册/卸载对称](/concepts/skill/pitfalls)）。
+> **Effect 是"一切皆插件"能成立的关键**：它保证插件热插拔时**不留残余**（对应 [06 skill 的生命周期与版本边界](/concepts/skill/architecture)）。
 
 ### ② 工具流水线三阶段：把关点在源头
 

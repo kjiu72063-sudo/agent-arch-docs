@@ -4,7 +4,7 @@ title: skill 验收 gate
 
 # skill 验收 gate
 
-对应 [6-2 design](/concepts/skill/design) 的 L5 验收。脚本：`gate/skill_gate.py`（本地可运行）。
+对应 [6-5 架构总结](/concepts/skill/architecture) 的工程规范验收。脚本：`gate/skill_gate.py`（本地可运行）。
 
 运行：
 ```bash
@@ -135,4 +135,4 @@ if __name__ == "__main__":
 ```
 :::
 
-> 上一节：[6-3 常见坑 + 自检](/concepts/skill/pitfalls) ｜ 回到：[06 skill](/concepts/skill)
+> 上一节：[6-5 架构总结](/concepts/skill/architecture) ｜ 回到：[06 skill](/concepts/skill)
